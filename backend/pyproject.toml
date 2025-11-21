@@ -1,0 +1,66 @@
+[project]
+name = "digital-co-worker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.11.*"
+dependencies = [
+    "langchain>=0.3.26",
+    "langchain-openai>=0.3.27",
+    "langgraph>=0.5.0",
+    "markitdown[docx,pdf,pptx]>=0.1.2",
+    "pymupdf4llm>=0.0.25",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+    "markdown>=3.8.2",
+    "pandas>=2.3.0",
+    "pypdf2>=3.0.1",
+    "flashrank>=0.2.10",
+    "qdrant-client>=1.14.3",
+    "sentence-transformers>=5.0.0",
+    "pydantic-settings>=2.10.1",
+    "einops>=0.8.1",
+    "pdfplumber>=0.11.7",
+    "tabulate>=0.9.0",
+    "uvicorn>=0.35.0",
+    "fastapi>=0.115.14",
+    "python-multipart>=0.0.20",
+    "black>=25.1.0",
+    "isort>=6.0.1",
+    "docling>=2.40.0",
+    "numpy<2.0",
+    "boto3>=1.39.4",
+    "tempmail-python>=2.3.3",
+    "tempmail-lol>=3.0.0",
+    "temp-mail>=0.2",
+    "pymongo>=4.13.2",
+    "realtimestt>=0.3.104",
+    "pyannote-audio>=3.3.2",
+    "speechbrain>=1.0.3",
+    "langchain-anthropic>=0.3.18",
+    "langchain-google-genai>=2.1.9",
+    "dvc[gs]>=3.62.0",
+    "google-api-python-client>=2.179.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.2.2",
+    "whisper-openai>=1.0.0",
+    "faster-whisper>=1.1.1",
+    "llvmlite>=0.40",
+    "numba>=0.57",
+    "openai-whisper>=20250625",
+    "librosa>=0.11.0",
+    "scipy>=1.11.0",
+    "soundfile>=0.12.1",
+    "webrtcvad>=2.0.10",
+    "sounddevice>=0.5.2",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+torchaudio = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
