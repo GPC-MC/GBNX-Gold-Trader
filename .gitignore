@@ -1,3 +1,4 @@
 backend/models/rank-T5-flan/flashrank-rankt5_Q.onnx
-backend/*
+backend/models/
 
+backend/models/
