@@ -2,3 +2,4 @@ backend/models/rank-T5-flan/flashrank-rankt5_Q.onnx
 backend/models/
 
 backend/models/
+frontend/node_modules/
