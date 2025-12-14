@@ -1,12 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  TrendingUp, 
-  Briefcase, 
-  Bot, 
+import {
+  TrendingUp,
+  Briefcase,
+  Bot,
   User,
-  LogOut
+  LogOut,
+  Newspaper
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -15,6 +16,7 @@ const Navbar: React.FC = () => {
   const navItems = [
     { path: '/', icon: Briefcase, label: 'Portfolio' },
     { path: '/market', icon: TrendingUp, label: 'Market' },
+    { path: '/news', icon: Newspaper, label: 'Market News' },
     { path: '/ai-assistant', icon: Bot, label: 'AI Assistant' },
     { path: '/profile', icon: User, label: 'Profile' }
   ];

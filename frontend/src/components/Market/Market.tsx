@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
-import { TrendingUp, TrendingDown, Activity, Globe, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
 
 interface ChartDataPoint {
   Date_time: string;
@@ -23,27 +23,12 @@ interface ApiResponse {
   data: ChartDataPoint[];
 }
 
-interface NewsArticle {
-  title: string;
-  summary: string;
-  source_url: string;
-  source_name: string;
-}
-
-interface NewsResponse {
-  articles: NewsArticle[];
-  count: number;
-}
-
 const Market: React.FC = () => {
   const [timeframe, setTimeframe] = useState('1D');
   const [priceData, setPriceData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [news, setNews] = useState<NewsArticle[]>([]);
-  const [newsLoading, setNewsLoading] = useState(true);
-  const [refreshingNews, setRefreshingNews] = useState(false);
-  
+
   const timeframes = ['1H', '1D', '1W', '1M'];
   const indicators = ['D%', 'ADX', 'CCI', 'EMA (20 period)'];
   
@@ -111,67 +96,6 @@ const Market: React.FC = () => {
 
     fetchChartData();
   }, []);
-
-  useEffect(() => {
-    fetchNews();
-  }, []);
-
-  const fetchNews = async (isRefresh = false) => {
-    try {
-      if (isRefresh) {
-        setRefreshingNews(true);
-      } else {
-        setNewsLoading(true);
-      }
-      
-      const response = await fetch('https://bf1bd891617c.ngrok-free.app/latest_news', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          keyword: 'gold'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: NewsResponse = await response.json();
-      setNews(data.articles || []);
-      console.log('News fetched successfully:', data);
-    } catch (err) {
-      console.error('Error fetching news:', err);
-      // Fallback to mock news when API fails
-      const mockNews: NewsArticle[] = [
-        {
-          title: "Gold Eclipses $3,900 as Government Shutdown Begins",
-          summary: "On Wednesday, October 1, 2025, gold futures opened at a record $3,887.70 per ounce, up about 1.2% from the prior day, and later pushed above $3,900 amid heightened safe-haven demand triggered by the U.S. government shutdown ([finance.yahoo.com](https://finance.yahoo.com/personal-finance/investing/article/gold-price-today-wednesday-october-1-gold-eclipses-3900-as-government-shutdown-begins-113229852.html?utm_source=openai)).",
-          source_url: "https://finance.yahoo.com/personal-finance/investing/article/gold-price-today-wednesday-october-1-gold-eclipses-3900-as-government-shutdown-begins-113229852.html",
-          source_name: "finance.yahoo.com"
-        },
-        {
-          title: "Gold hits record high as US government shuts down",
-          summary: "Spot gold reached a record high—peaking at around $3,898.18 per ounce—while U.S. December futures climbed to $3,914.50, fueled by safe-haven demand amid a U.S. government shutdown and heightened expectations of an interest rate cut by the Federal Reserve.",
-          source_url: "https://www.reuters.com/world/india/gold-hits-record-high-us-shutdown-risks-rate-cut-bets-2025-10-01/",
-          source_name: "reuters.com"
-        }
-      ];
-      setNews(mockNews);
-    } finally {
-      if (isRefresh) {
-        setRefreshingNews(false);
-      } else {
-        setNewsLoading(false);
-      }
-    }
-  };
-
-  const handleRefreshNews = () => {
-    fetchNews(true);
-  };
 
   // Calculate market data from API response
   const marketData = priceData.length > 0 ? {
@@ -487,81 +411,6 @@ const Market: React.FC = () => {
               </div>
             </div>
 
-            {/* News Feed */}
-            <div className="bg-gray-800 rounded-2xl p-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Globe className="text-yellow-400" size={20} />
-                <h2 className="text-xl font-semibold text-yellow-400">Market News</h2>
-                <div className="flex items-center space-x-2 ml-auto">
-                  {(newsLoading || refreshingNews) && (
-                    <span className="text-sm text-yellow-400">
-                      {refreshingNews ? 'Refreshing...' : 'Loading...'}
-                    </span>
-                  )}
-                  <button
-                    onClick={handleRefreshNews}
-                    disabled={refreshingNews}
-                    className={`p-2 rounded-lg transition-all duration-200 ${
-                      refreshingNews 
-                        ? 'text-gray-500 cursor-not-allowed' 
-                        : 'text-gray-400 hover:text-yellow-400 hover:bg-gray-700'
-                    }`}
-                    title="Refresh News"
-                  >
-                    <RefreshCw 
-                      size={16} 
-                      className={refreshingNews ? 'animate-spin' : ''} 
-                    />
-                  </button>
-                </div>
-              </div>
-              {newsLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="border-b border-gray-700 pb-3">
-                      <div className="animate-pulse">
-                        <div className="h-4 bg-gray-600 rounded mb-2"></div>
-                        <div className="h-3 bg-gray-600 rounded w-3/4 mb-1"></div>
-                        <div className="h-3 bg-gray-600 rounded w-1/2"></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {news.length > 0 ? (
-                    news.slice(0, 5).map((article, index) => (
-                      <div key={index} className="border-b border-gray-700 pb-3 last:border-b-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">
-                            LIVE
-                          </div>
-                          <span className="text-xs text-gray-400">{article.source_name}</span>
-                        </div>
-                        <a 
-                          href={article.source_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="block hover:bg-gray-700/50 rounded p-1 -m-1 transition-colors duration-200"
-                        >
-                          <h3 className="text-sm font-medium text-white mb-2 hover:text-yellow-400 transition-colors duration-200">
-                            {article.title}
-                          </h3>
-                          <p className="text-xs text-gray-400 line-clamp-3">
-                            {article.summary}
-                          </p>
-                        </a>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-400 py-4">
-                      <Globe size={32} className="mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No news available</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import Market from './components/Market/Market';
 import Portfolio from './components/Portfolio/Portfolio';
 import AIAssistant from './components/AIAssistant/AIAssistant';
 import Profile from './components/Profile/Profile';
+import MarketNews from './components/News/MarketNews';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Portfolio />} />
                   <Route path="/market" element={<Market />} />
+                  <Route path="/news" element={<MarketNews />} />
                   <Route path="/portfolio" element={<Portfolio />} />
                   <Route path="/ai-assistant" element={<AIAssistant />} />
                   <Route path="/profile" element={<Profile />} />
