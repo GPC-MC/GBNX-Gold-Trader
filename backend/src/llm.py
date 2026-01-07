@@ -19,6 +19,9 @@ from google.genai import types
 from langchain_core.messages import AIMessage, ToolCall
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
+
+
+
 from src.app_config import app_config
 
 logging.basicConfig(level=logging.INFO)
@@ -44,12 +47,8 @@ class GeminiClientWrapper:
     ):
         self.model = model
         self.temperature = temperature
-        google_api_key = api_key or app_config.GOOGLE_API_KEY or app_config.GEMINI_API_KEY
-
-        print(google_api_key)
-        self.client = (
-            genai.Client(api_key=google_api_key) if google_api_key else genai.Client()
-        )
+        gemini_api_key = api_key or app_config.GEMINI_API_KEY
+        self.client = genai.Client(api_key=gemini_api_key) if gemini_api_key else genai.Client()
         
         # Tool binding state
         self._tools: Optional[List[types.Tool]] = None
@@ -769,39 +768,12 @@ if __name__ == "__main__":
         print("Testing Gemini Client")
         print("=" * 50)
         try:
-            gemini = GeminiClientWrapper(model="gemini-2.5-flash-lite")
+            gemini = GeminiClientWrapper(model="gemini-2.5-flash")
             response = gemini.invoke("Say hello in one sentence.")
             print(f"Gemini Response: {response.content}")
             print("✅ Gemini test passed!")
         except Exception as e:
             print(f"❌ Gemini test failed: {e}")
-
-    def test_openai():
-        """Test OpenAI via FallbackLLM."""
-        print("\n" + "=" * 50)
-        print("Testing OpenAI via FallbackLLM")
-        print("=" * 50)
-        try:
-            llm = FallbackLLM(openai_model="gpt-4.1-mini", temperature=0.2)
-            response = llm.invoke("Say hello in one sentence.")
-            print(f"OpenAI Response: {response.content}")
-            print("✅ OpenAI test passed!")
-        except Exception as e:
-            print(f"❌ OpenAI test failed: {e}")
-
-    def test_fallback_llm():
-        """Test FallbackLLM with default settings (uses Gemini first)."""
-        print("\n" + "=" * 50)
-        print("Testing FallbackLLM (default: Gemini -> OpenAI)")
-        print("=" * 50)
-        try:
-            llm = FallbackLLM()
-            print(f"Available LLMs: {[name for name, _ in llm.available_llms]}")
-            response = llm.invoke("What is 2 + 2? Answer in one word.")
-            print(f"Response: {response.content}")
-            print("✅ FallbackLLM test passed!")
-        except Exception as e:
-            print(f"❌ FallbackLLM test failed: {e}")
 
     def test_streaming():
         """Test streaming with FallbackLLM."""
@@ -809,7 +781,7 @@ if __name__ == "__main__":
         print("Testing Streaming")
         print("=" * 50)
         try:
-            llm = FallbackLLM()
+            llm = FallbackLLM(gemini_model="gemini-2.5-flash", openai_model="skip", priority="gemini")
             print("Streaming response: ", end="")
             for chunk in llm.stream("Count from 1 to 5."):
                 print(chunk.content, end="", flush=True)
@@ -831,27 +803,25 @@ if __name__ == "__main__":
             print(f"❌ Async test failed: {e}")
 
 
+
+    from langchain_core.tools import tool
+
+    @tool
+    def get_weather(location: str) -> str:
+        """Get weather for a location."""
+        return f"Weather in {location}: Sunny, 72°F"
+
+    llm = FallbackLLM(gemini_model="gemini-2.5-flash", openai_model="skip", priority="gemini")
+    llm_with_tools = llm.bind_tools([get_weather])
+    response = llm_with_tools.invoke("What's the weather in Tokyo?")
+    print(response.tool_calls)  # [ToolCall(name='get_weather', args={'location': 'Tokyo'}, ...)]
+    print("\n🚀 Starting LLM Tests\n")
     test_gemini()
+    test_streaming()
+    print("\n" + "=" * 50)
+    print("All tests completed!")
+    print("=" * 50)
 
-
-    # from langchain_core.tools import tool
-    # @tool
-    # def get_weather(location: str) -> str:
-    #     return f"Weather in {location}: Sunny, 72°F"
-
-    # llm = FallbackLLM(gemini_model="gemini-2.5-flash", openai_model="skip")
-    # llm_with_tools = llm.bind_tools([get_weather])
-    # response = llm_with_tools.invoke("What's the weather in Tokyo?")
-    # print(response.tool_calls)  # [ToolCall(name='get_weather', args={'location': 'Tokyo'}, ...)]
-    # print("\n🚀 Starting LLM Tests\n")
-    
-    # test_openai()
-    # test_fallback_llm()
-    # test_streaming()
-    # asyncio.run(test_async())
-    # print("\n" + "=" * 50)
-    # print("All tests completed!")
-    # print("=" * 50)
 
 
 
