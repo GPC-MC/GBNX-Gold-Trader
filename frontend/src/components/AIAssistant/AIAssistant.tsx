@@ -130,35 +130,16 @@ const AIAssistant: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
-        {/* AI Assistant Header */}
-        <div className="bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 border border-yellow-500/20 rounded-2xl p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-yellow-400 mb-2">
-                🤖 GoldAI Assistant
-              </h1>
-              <div className="text-lg text-gray-300">Your intelligent trading companion</div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-400 mb-1">Current Gold Price</div>
-              <div className="text-green-400 font-semibold text-xl">
-                $2,345 <span className="text-sm">+0.8%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content - Two Panel Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ height: 'calc(100vh - 280px)' }}>
+    <div>
+      {/* Main Content - Two Panel Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{ height: 'calc(100vh - 280px)' }}>
           {/* Left Panel - Chat */}
-          <div className="bg-gray-800 rounded-2xl p-6 flex flex-col h-full">
+          <div className="rounded-2xl p-6 flex flex-col h-full border" style={{ backgroundColor: '#121826', borderColor: 'rgba(212, 175, 55, 0.15)', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
             <div className="flex items-center space-x-2 mb-6">
-              <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-sm">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm" style={{ backgroundColor: 'rgba(212, 175, 55, 0.2)' }}>
                 🤖
               </div>
-              <h2 className="text-xl font-semibold text-yellow-400">Chat Assistant</h2>
+              <h2 className="text-xl font-semibold" style={{ color: '#E5E7EB' }}>GoldAI Chat</h2>
             </div>
 
             {/* Chat Messages */}
@@ -247,16 +228,17 @@ const AIAssistant: React.FC = () => {
           </div>
 
           {/* Right Panel - Visualization */}
-          <div className="bg-gray-800 rounded-2xl overflow-hidden h-full flex flex-col">
+          <div className="rounded-2xl overflow-hidden h-full flex flex-col border" style={{ backgroundColor: '#121826', borderColor: 'rgba(212, 175, 55, 0.15)', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
             {/* Tab Navigation */}
-            <div className="flex border-b border-gray-700">
+            <div className="flex border-b" style={{ borderColor: 'rgba(212, 175, 55, 0.1)' }}>
               <button
                 onClick={() => setActiveTab('insights')}
-                className={`flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 ${
-                  activeTab === 'insights'
-                    ? 'bg-yellow-500/20 text-yellow-400 border-b-2 border-yellow-500'
-                    : 'text-gray-400 hover:text-yellow-400 hover:bg-gray-700'
-                }`}
+                className="flex-1 px-6 py-4 text-sm font-medium transition-all duration-200"
+                style={{
+                  backgroundColor: activeTab === 'insights' ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                  color: activeTab === 'insights' ? '#D4AF37' : '#9CA3AF',
+                  borderBottom: activeTab === 'insights' ? '2px solid #D4AF37' : 'none'
+                }}
               >
                 <div className="flex items-center justify-center space-x-2">
                   <BarChart3 size={16} />
@@ -265,15 +247,16 @@ const AIAssistant: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('knowledge')}
-                className={`flex-1 px-6 py-4 text-sm font-medium transition-all duration-200 ${
-                  activeTab === 'knowledge'
-                    ? 'bg-yellow-500/20 text-yellow-400 border-b-2 border-yellow-500'
-                    : 'text-gray-400 hover:text-yellow-400 hover:bg-gray-700'
-                }`}
+                className="flex-1 px-6 py-4 text-sm font-medium transition-all duration-200"
+                style={{
+                  backgroundColor: activeTab === 'knowledge' ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                  color: activeTab === 'knowledge' ? '#D4AF37' : '#9CA3AF',
+                  borderBottom: activeTab === 'knowledge' ? '2px solid #D4AF37' : 'none'
+                }}
               >
                 <div className="flex items-center justify-center space-x-2">
                   <BookOpen size={16} />
-                  <span>Input your knowledge to teach AI Agent</span>
+                  <span>Upload Knowledge</span>
                 </div>
               </button>
             </div>
@@ -290,7 +273,6 @@ const AIAssistant: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 

@@ -6,7 +6,7 @@ import LoginPage from './components/Auth/LoginPage';
 import Navbar from './components/Layout/Navbar';
 import Market from './components/Market/Market';
 import Portfolio from './components/Portfolio/Portfolio';
-import AIAssistant from './components/AIAssistant/AIAssistant';
+import AIStudio from './components/AIStudio/AIStudio';
 import Profile from './components/Profile/Profile';
 import MarketNews from './components/News/MarketNews';
 
@@ -18,14 +18,14 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/*" element={
             <ProtectedRoute>
-              <div className="min-h-screen bg-gray-900">
+              <div className="min-h-screen" style={{ backgroundColor: '#0B1220' }}>
                 <Navbar />
                 <Routes>
                   <Route path="/" element={<Portfolio />} />
                   <Route path="/market" element={<Market />} />
                   <Route path="/news" element={<MarketNews />} />
                   <Route path="/portfolio" element={<Portfolio />} />
-                  <Route path="/ai-assistant" element={<AIAssistant />} />
+                  <Route path="/ai-studio" element={<AIStudio />} />
                   <Route path="/profile" element={<Profile />} />
                 </Routes>
               </div>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
 
+type Commodity = 'gold' | 'silver' | 'cobalt';
+
 interface ChartDataPoint {
   Date_time: string;
   Open: number;
@@ -23,79 +25,104 @@ interface ApiResponse {
   data: ChartDataPoint[];
 }
 
+interface CommodityConfig {
+  name: string;
+  basePrice: number;
+  color: string;
+}
+
+const commodityConfigs: Record<Commodity, CommodityConfig> = {
+  gold: { name: 'GOLD', basePrice: 2345, color: '#D4AF37' },
+  silver: { name: 'SILVER', basePrice: 28.5, color: '#C0C0C0' },
+  cobalt: { name: 'COBALT', basePrice: 34.2, color: '#6366F1' }
+};
+
 const Market: React.FC = () => {
   const [timeframe, setTimeframe] = useState('1D');
+  const [selectedCommodity, setSelectedCommodity] = useState<Commodity>('gold');
   const [priceData, setPriceData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const timeframes = ['1H', '1D', '1W', '1M'];
   const indicators = ['D%', 'ADX', 'CCI', 'EMA (20 period)'];
-  
+  const commodities: Commodity[] = ['gold', 'silver', 'cobalt'];
+
+  // Generate mock data for different commodities
+  const generateMockData = (commodity: Commodity): ChartDataPoint[] => {
+    const config = commodityConfigs[commodity];
+    return Array.from({ length: 50 }, (_, i) => {
+      const date = new Date();
+      date.setHours(date.getHours() - (49 - i));
+
+      return {
+        Date_time: date.toISOString(),
+        Open: config.basePrice + Math.random() * 20 - 10,
+        High: config.basePrice + Math.random() * 25,
+        Low: config.basePrice - Math.random() * 25,
+        Close: config.basePrice + Math.random() * 20 - 10,
+        Volume: Math.floor(Math.random() * 10000) + 5000,
+        EMA_20: config.basePrice + Math.random() * 10 - 5,
+        Stochastic_D: Math.random() * 100,
+        CCI: Math.random() * 200 - 100,
+        ADX: Math.random() * 100
+      };
+    });
+  };
+
   useEffect(() => {
     const fetchChartData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://bf1bd891617c.ngrok-free.app/livechart_data', {
-          method: 'POST',
-          headers: {
-            'accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            trading_pairs: "xau_usd",
-            timezone: "UTC",
-            interval: 3600,
-            sort: "asc",
-            limit: 100,
-            offset: 7001
-          })
-        });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // Only fetch real data for gold
+        if (selectedCommodity === 'gold') {
+          const response = await fetch('https://bf1bd891617c.ngrok-free.app/livechart_data', {
+            method: 'POST',
+            headers: {
+              'accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              trading_pairs: "xau_usd",
+              timezone: "UTC",
+              interval: 3600,
+              sort: "asc",
+              limit: 100,
+              offset: 7001
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            const textResponse = await response.text();
+            throw new Error(`API did not return JSON. Content-Type: ${contentType}. Response: ${textResponse.substring(0, 100)}...`);
+          }
+
+          const data: ApiResponse = await response.json();
+          setPriceData(data.data);
+          setError(null);
+        } else {
+          // Use mock data for silver and cobalt
+          setPriceData(generateMockData(selectedCommodity));
+          setError(null);
         }
-
-        // Check if response is JSON before parsing
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const textResponse = await response.text();
-          throw new Error(`API did not return JSON. Content-Type: ${contentType}. Response: ${textResponse.substring(0, 100)}...`);
-        }
-
-        const data: ApiResponse = await response.json();
-        setPriceData(data.data);
-        setError(null);
       } catch (err) {
         console.error('Error fetching chart data:', err);
         setError('Failed to load chart data');
         // Fallback to mock data when API fails
-        const mockData: ChartDataPoint[] = Array.from({ length: 50 }, (_, i) => {
-          const basePrice = 2345;
-          const date = new Date();
-          date.setHours(date.getHours() - (49 - i));
-          
-          return {
-            Date_time: date.toISOString(),
-            Open: basePrice + Math.random() * 20 - 10,
-            High: basePrice + Math.random() * 25,
-            Low: basePrice - Math.random() * 25,
-            Close: basePrice + Math.random() * 20 - 10,
-            Volume: Math.floor(Math.random() * 10000) + 5000,
-            EMA_20: basePrice + Math.random() * 10 - 5,
-            Stochastic_D: Math.random() * 100,
-            CCI: Math.random() * 200 - 100,
-            ADX: Math.random() * 100
-          };
-        });
-        setPriceData(mockData);
+        setPriceData(generateMockData(selectedCommodity));
       } finally {
         setLoading(false);
       }
     };
 
     fetchChartData();
-  }, []);
+  }, [selectedCommodity]);
 
   // Calculate market data from API response
   const marketData = priceData.length > 0 ? {
@@ -114,15 +141,35 @@ const Market: React.FC = () => {
     low24h: 2328.90
   };
 
+  const currentConfig = commodityConfigs[selectedCommodity];
+
   return (
     <div className="min-h-screen text-white" style={{ backgroundColor: '#0B1220' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Commodity Selection Tabs */}
+        <div className="mb-6 flex items-center space-x-3">
+          {commodities.map((commodity) => (
+            <button
+              key={commodity}
+              onClick={() => setSelectedCommodity(commodity)}
+              className="px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200"
+              style={{
+                backgroundColor: selectedCommodity === commodity ? commodityConfigs[commodity].color : '#161E2E',
+                color: selectedCommodity === commodity ? '#0B1220' : '#9CA3AF',
+                fontWeight: selectedCommodity === commodity ? 600 : 500
+              }}
+            >
+              {commodityConfigs[commodity].name}
+            </button>
+          ))}
+        </div>
+
         {/* Market Header */}
         <div className="border rounded-2xl mb-8" style={{ backgroundColor: '#121826', borderColor: 'rgba(212, 175, 55, 0.15)', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div>
-              <h1 className="text-lg font-semibold mb-3" style={{ color: '#9CA3AF', letterSpacing: '0.03em' }}>GOLD MARKET</h1>
-              <div className="text-5xl font-bold mb-2" style={{ color: '#D4AF37' }}>
+              <h1 className="text-lg font-semibold mb-3" style={{ color: '#9CA3AF', letterSpacing: '0.03em' }}>{currentConfig.name} MARKET</h1>
+              <div className="text-5xl font-bold mb-2" style={{ color: currentConfig.color }}>
                 ${marketData.price.toFixed(2)}
               </div>
               <div className="flex items-center space-x-2">
@@ -387,48 +434,48 @@ const Market: React.FC = () => {
           {/* Right Sidebar */}
           <div className="space-y-8">
             {/* Order Book */}
-            <div className="bg-gray-800 rounded-2xl p-6">
-              <h2 className="text-xl font-semibold text-yellow-400 mb-4">Order Book</h2>
-              <div className="space-y-2">
-                <div className="text-xs text-gray-400 grid grid-cols-2 gap-4 pb-2 border-b border-gray-700">
-                  <span>Price (USD)</span>
-                  <span className="text-right">Size (oz)</span>
+            <div className="rounded-2xl p-6" style={{ backgroundColor: '#121826', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#E5E7EB' }}>Order Book</h2>
+              <div className="space-y-3">
+                <div className="text-xs font-medium grid grid-cols-2 gap-4 pb-3 border-b" style={{ color: '#6B7280', letterSpacing: '0.03em', borderColor: 'rgba(212, 175, 55, 0.1)' }}>
+                  <span>PRICE (USD)</span>
+                  <span className="text-right">SIZE (OZ)</span>
                 </div>
-                
+
                 {/* Asks */}
-                <div className="space-y-1">
-                  <div className="text-xs text-red-400 grid grid-cols-2 gap-4">
-                    <span>2,348.50</span>
-                    <span className="text-right">1.2</span>
+                <div className="space-y-2">
+                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#DC2626' }}>
+                    <span className="font-medium">2,348.50</span>
+                    <span className="text-right" style={{ color: '#9CA3AF' }}>1.2</span>
                   </div>
-                  <div className="text-xs text-red-400 grid grid-cols-2 gap-4">
-                    <span>2,347.25</span>
-                    <span className="text-right">2.8</span>
+                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#DC2626' }}>
+                    <span className="font-medium">2,347.25</span>
+                    <span className="text-right" style={{ color: '#9CA3AF' }}>2.8</span>
                   </div>
-                  <div className="text-xs text-red-400 grid grid-cols-2 gap-4">
-                    <span>2,346.00</span>
-                    <span className="text-right">1.5</span>
+                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#DC2626' }}>
+                    <span className="font-medium">2,346.00</span>
+                    <span className="text-right" style={{ color: '#9CA3AF' }}>1.5</span>
                   </div>
                 </div>
 
-                {/* Current Price */}
-                <div className="py-2 text-center">
-                  <span className="text-yellow-400 font-semibold">${marketData.price.toFixed(2)}</span>
+                {/* Current Price - Highlighted */}
+                <div className="py-3 px-3 text-center rounded-lg" style={{ backgroundColor: 'rgba(212, 175, 55, 0.15)' }}>
+                  <span className="font-bold text-lg" style={{ color: '#D4AF37' }}>${marketData.price.toFixed(2)}</span>
                 </div>
 
                 {/* Bids */}
-                <div className="space-y-1">
-                  <div className="text-xs text-green-400 grid grid-cols-2 gap-4">
-                    <span>2,344.75</span>
-                    <span className="text-right">3.1</span>
+                <div className="space-y-2">
+                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#16A34A' }}>
+                    <span className="font-medium">2,344.75</span>
+                    <span className="text-right" style={{ color: '#9CA3AF' }}>3.1</span>
                   </div>
-                  <div className="text-xs text-green-400 grid grid-cols-2 gap-4">
-                    <span>2,343.50</span>
-                    <span className="text-right">2.4</span>
+                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#16A34A' }}>
+                    <span className="font-medium">2,343.50</span>
+                    <span className="text-right" style={{ color: '#9CA3AF' }}>2.4</span>
                   </div>
-                  <div className="text-xs text-green-400 grid grid-cols-2 gap-4">
-                    <span>2,342.25</span>
-                    <span className="text-right">1.8</span>
+                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#16A34A' }}>
+                    <span className="font-medium">2,342.25</span>
+                    <span className="text-right" style={{ color: '#9CA3AF' }}>1.8</span>
                   </div>
                 </div>
               </div>
