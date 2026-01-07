@@ -1,4 +1,5 @@
 import React from 'react';
+import clsx from 'clsx';
 import ReactMarkdown from 'react-markdown';
 import { ChatMessage } from '../../types';
 
@@ -8,62 +9,101 @@ interface ChatBubbleProps {
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
   const isUser = message.type === 'user';
-  
+
+  const textPrimary = isUser ? 'text-ink-900' : 'text-gray-100';
+  const textSecondary = isUser ? 'text-ink-900/70' : 'text-gray-500';
+
   return (
-    <div className={`${
-      isUser 
-        ? 'flex justify-end' 
-        : 'w-full'
-    }`}>
-      <div className={`${
-        isUser ? 'max-w-lg' : 'w-full'
-      } ${
-        isUser 
-          ? 'bg-yellow-500 text-white' 
-          : 'bg-gray-700 text-white'
-      } rounded-xl px-4 py-3 shadow-lg`}>
+    <div className={clsx(isUser ? 'flex justify-end' : 'w-full')}>
+      <div
+        className={clsx(
+          isUser ? 'max-w-lg' : 'w-full',
+          'rounded-2xl px-4 py-3',
+          isUser
+            ? 'bg-gradient-to-r from-gold-500 to-gold-300 text-ink-900 shadow-glow'
+            : 'border border-gold-500/10 bg-ink-800/55 text-gray-100 shadow-panel backdrop-blur-sm'
+        )}
+      >
         {!isUser && (
-          <div className="flex items-center space-x-1 mb-1">
-            <span className="text-yellow-400 font-medium text-sm">🤖 GoldAI</span>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-gold-300 font-semibold text-xs tracking-[0.18em]">GOLD AI</span>
           </div>
         )}
-        <div className="leading-relaxed prose prose-invert prose-sm max-w-none prose-headings:text-white prose-p:text-white prose-li:text-white">
+
+        <div className="leading-relaxed">
           <ReactMarkdown
             components={{
-              // Custom styling for markdown elements
-              h1: ({ children }) => <h1 className="text-lg font-bold text-white mb-2">{children}</h1>,
-              h2: ({ children }) => <h2 className="text-base font-semibold text-white mb-2">{children}</h2>,
-              h3: ({ children }) => <h3 className="text-sm font-medium text-white mb-1">{children}</h3>,
-              p: ({ children }) => <p className="text-white mb-2 last:mb-0">{children}</p>,
-              ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>,
-              ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>,
-              li: ({ children }) => <li className="text-white">{children}</li>,
+              h1: ({ children }) => <h1 className={clsx('text-lg font-bold mb-2', textPrimary)}>{children}</h1>,
+              h2: ({ children }) => <h2 className={clsx('text-base font-semibold mb-2', textPrimary)}>{children}</h2>,
+              h3: ({ children }) => <h3 className={clsx('text-sm font-semibold mb-1', textPrimary)}>{children}</h3>,
+              p: ({ children }) => <p className={clsx('mb-2 last:mb-0', textPrimary)}>{children}</p>,
+              ul: ({ children }) => <ul className={clsx('list-disc list-inside mb-2 space-y-1', textPrimary)}>{children}</ul>,
+              ol: ({ children }) => <ol className={clsx('list-decimal list-inside mb-2 space-y-1', textPrimary)}>{children}</ol>,
+              li: ({ children }) => <li className={textPrimary}>{children}</li>,
               code: ({ children, className }) => {
                 const isInline = !className;
+
                 return isInline ? (
-                  <code className="bg-gray-600 text-yellow-300 px-1 py-0.5 rounded text-xs font-mono">
+                  <code
+                    className={clsx(
+                      'px-1 py-0.5 rounded text-xs font-mono',
+                      isUser
+                        ? 'bg-black/10 text-ink-900'
+                        : 'bg-ink-900/60 text-gold-300 border border-gold-500/10'
+                    )}
+                  >
                     {children}
                   </code>
                 ) : (
-                  <code className="block bg-gray-600 text-yellow-300 p-2 rounded text-xs font-mono whitespace-pre-wrap">
+                  <code
+                    className={clsx(
+                      'block p-2 rounded text-xs font-mono whitespace-pre-wrap',
+                      isUser
+                        ? 'bg-black/10 text-ink-900'
+                        : 'bg-ink-900/60 text-gold-300 border border-gold-500/10'
+                    )}
+                  >
                     {children}
                   </code>
                 );
               },
-              pre: ({ children }) => <pre className="bg-gray-600 p-2 rounded mb-2 overflow-x-auto">{children}</pre>,
+              pre: ({ children }) => (
+                <pre
+                  className={clsx(
+                    'p-2 rounded mb-2 overflow-x-auto',
+                    isUser
+                      ? 'bg-black/10'
+                      : 'bg-ink-900/60 border border-gold-500/10'
+                  )}
+                >
+                  {children}
+                </pre>
+              ),
               blockquote: ({ children }) => (
-                <blockquote className="border-l-4 border-yellow-400 pl-3 italic text-gray-300 mb-2">
+                <blockquote
+                  className={clsx(
+                    'border-l-4 pl-3 italic mb-2',
+                    isUser ? 'border-black/20 text-ink-900/80' : 'border-gold-500/40 text-gray-300'
+                  )}
+                >
                   {children}
                 </blockquote>
               ),
-              strong: ({ children }) => <strong className="font-semibold text-yellow-300">{children}</strong>,
-              em: ({ children }) => <em className="italic text-gray-300">{children}</em>,
+              strong: ({ children }) => (
+                <strong className={clsx('font-semibold', isUser ? 'text-ink-900' : 'text-gold-300')}>
+                  {children}
+                </strong>
+              ),
+              em: ({ children }) => <em className={clsx('italic', isUser ? 'text-ink-900/80' : 'text-gray-300')}>{children}</em>,
               a: ({ children, href }) => (
-                <a 
-                  href={href} 
-                  target="_blank" 
+                <a
+                  href={href}
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="text-yellow-400 hover:text-yellow-300 underline"
+                  className={clsx(
+                    'underline underline-offset-2 transition-colors duration-200',
+                    isUser ? 'text-ink-900 hover:text-ink-900/80' : 'text-gold-300 hover:text-gold-500'
+                  )}
                 >
                   {children}
                 </a>
@@ -73,9 +113,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
             {message.message}
           </ReactMarkdown>
         </div>
-        <div className={`text-xs mt-2 text-right ${
-          isUser ? 'text-yellow-100' : 'text-gray-400'
-        }`}>
+
+        <div className={clsx('text-xs mt-2 text-right', textSecondary)}>
           <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       </div>
@@ -84,3 +123,4 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
 };
 
 export default ChatBubble;
+

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, Bot, Shield, TrendingUp, Zap } from 'lucide-react';
+import avatarImage from '../../../assets/avatar.png';
 
 type IconComponent = React.ComponentType<{ className?: string; size?: number }>;
 
@@ -115,11 +116,11 @@ const LandingPage: React.FC = () => {
 
                       {/* Mascot */}
                       <div className="relative">
-                        <Bot
-                          aria-hidden="true"
-                          size={96}
-                          className="text-[#D4AF37]"
-                          style={{ filter: 'drop-shadow(0 0 18px rgba(212,175,55,0.35))' }}
+                        <img
+                          src={avatarImage}
+                          alt="Gold Platform AI Mascot"
+                          className="w-80 h-80 sm:w-96 sm:h-96 object-contain"
+                          style={{ filter: 'drop-shadow(0 0 28px rgba(212,175,55,0.45))' }}
                         />
                         <div className="pointer-events-none absolute -top-10 -left-12 rounded-full border border-[#D4AF37]/15 bg-[#0B1220]/60 p-2">
                           <TrendingUp size={18} className="text-[#F2D27C]/70" />

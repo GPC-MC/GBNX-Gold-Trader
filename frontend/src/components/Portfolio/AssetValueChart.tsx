@@ -1,4 +1,5 @@
 import React from 'react';
+import clsx from 'clsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 // Generate mock asset value data over time
@@ -43,18 +44,18 @@ const AssetValueChart: React.FC = () => {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="rounded-lg p-3 border" style={{ backgroundColor: '#121826', borderColor: 'rgba(212, 175, 55, 0.3)' }}>
-          <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>{payload[0].payload.date}</p>
-          <p className="text-sm font-semibold mb-1" style={{ color: '#E5E7EB' }}>
+        <div className="rounded-xl p-3 border border-gold-500/30 bg-ink-900/85 backdrop-blur shadow-panel">
+          <p className="text-xs mb-2 text-gray-400">{payload[0].payload.date}</p>
+          <p className="text-sm font-semibold mb-1 text-gray-100">
             Total: ${payload[0].payload.total.toLocaleString()}
           </p>
-          <p className="text-xs" style={{ color: '#D4AF37' }}>
+          <p className="text-xs text-gold-300">
             Gold: ${payload[0].payload.gold.toLocaleString()}
           </p>
-          <p className="text-xs" style={{ color: '#38BDF8' }}>
+          <p className="text-xs text-sky-300">
             ETF: ${payload[0].payload.etf.toLocaleString()}
           </p>
-          <p className="text-xs" style={{ color: '#22C55E' }}>
+          <p className="text-xs text-emerald-300">
             Cash: ${payload[0].payload.cash.toLocaleString()}
           </p>
         </div>
@@ -68,18 +69,12 @@ const AssetValueChart: React.FC = () => {
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs font-medium mb-1" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>
-              CURRENT VALUE
-            </div>
-            <div className="text-3xl font-bold" style={{ color: '#E5E7EB' }}>
-              ${currentValue.toLocaleString()}
-            </div>
+            <div className="text-xs font-semibold tracking-[0.18em] text-gray-500 mb-1">CURRENT VALUE</div>
+            <div className="text-3xl font-bold text-gray-100">${currentValue.toLocaleString()}</div>
           </div>
           <div className="text-right">
-            <div className="text-xs font-medium mb-1" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>
-              30-DAY CHANGE
-            </div>
-            <div className="text-xl font-semibold" style={{ color: isPositive ? '#22C55E' : '#DC2626' }}>
+            <div className="text-xs font-semibold tracking-[0.18em] text-gray-500 mb-1">30-DAY CHANGE</div>
+            <div className={clsx('text-xl font-semibold', isPositive ? 'text-emerald-300' : 'text-rose-300')}>
               {isPositive ? '+' : ''}${change.toLocaleString()} ({isPositive ? '+' : ''}{changePercent.toFixed(2)}%)
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import clsx from 'clsx';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 // Generate mock PNL data
 const generatePNLData = () => {
@@ -33,12 +34,17 @@ const PNLChart: React.FC = () => {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="rounded-lg p-3 border" style={{ backgroundColor: '#121826', borderColor: 'rgba(212, 175, 55, 0.3)' }}>
-          <p className="text-xs mb-1" style={{ color: '#9CA3AF' }}>{payload[0].payload.date}</p>
-          <p className="text-sm font-semibold" style={{ color: payload[0].value >= 0 ? '#22C55E' : '#DC2626' }}>
+        <div className="rounded-xl p-3 border border-gold-500/30 bg-ink-900/85 backdrop-blur shadow-panel">
+          <p className="text-xs mb-1 text-gray-400">{payload[0].payload.date}</p>
+          <p
+            className={clsx(
+              'text-sm font-semibold',
+              payload[0].value >= 0 ? 'text-emerald-300' : 'text-rose-300'
+            )}
+          >
             Total P&L: ${payload[0].value.toLocaleString()}
           </p>
-          <p className="text-xs" style={{ color: '#6B7280' }}>
+          <p className="text-xs text-gray-500">
             Daily: ${payload[0].payload.dailyPNL.toLocaleString()}
           </p>
         </div>
@@ -52,18 +58,14 @@ const PNLChart: React.FC = () => {
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs font-medium mb-1" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>
-              TOTAL P&L (30 DAYS)
-            </div>
-            <div className="text-3xl font-bold" style={{ color: isProfitable ? '#22C55E' : '#DC2626' }}>
+            <div className="text-xs font-semibold tracking-[0.18em] text-gray-500 mb-1">TOTAL P&L (30 DAYS)</div>
+            <div className={clsx('text-3xl font-bold', isProfitable ? 'text-emerald-300' : 'text-rose-300')}>
               {isProfitable ? '+' : ''}${finalPNL.toLocaleString()}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs font-medium mb-1" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>
-              RETURN
-            </div>
-            <div className="text-xl font-semibold" style={{ color: isProfitable ? '#22C55E' : '#DC2626' }}>
+            <div className="text-xs font-semibold tracking-[0.18em] text-gray-500 mb-1">RETURN</div>
+            <div className={clsx('text-xl font-semibold', isProfitable ? 'text-emerald-300' : 'text-rose-300')}>
               {isProfitable ? '+' : ''}{((finalPNL / 50000) * 100).toFixed(2)}%
             </div>
           </div>

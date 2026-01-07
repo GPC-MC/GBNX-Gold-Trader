@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Send, X, CheckCircle, AlertCircle } from 'lucide-react';
+import clsx from 'clsx';
+import { AlertCircle, CheckCircle, FileText, Send, Upload, X } from 'lucide-react';
 
 const KnowledgeInputPanel: React.FC = () => {
   const [inputMethod, setInputMethod] = useState<'text' | 'pdf'>('text');
@@ -13,9 +14,9 @@ const KnowledgeInputPanel: React.FC = () => {
     if (file && file.type === 'application/pdf') {
       setUploadedFile(file);
       setSubmitStatus('idle');
-    } else {
-      alert('Please upload a PDF file only.');
+      return;
     }
+    alert('Please upload a PDF file only.');
   };
 
   const handleRemoveFile = () => {
@@ -28,7 +29,7 @@ const KnowledgeInputPanel: React.FC = () => {
       alert('Please enter some text to teach the AI.');
       return;
     }
-    
+
     if (inputMethod === 'pdf' && !uploadedFile) {
       alert('Please upload a PDF file.');
       return;
@@ -39,19 +40,17 @@ const KnowledgeInputPanel: React.FC = () => {
 
     try {
       let expertPrompt = '';
-      
+
       if (inputMethod === 'text') {
         expertPrompt = textInput.trim();
       } else if (inputMethod === 'pdf' && uploadedFile) {
-        // For PDF, we'll use the filename as a placeholder
-        // In a real implementation, you'd extract text from the PDF
         expertPrompt = `PDF Document: ${uploadedFile.name} - Content would be extracted and processed here.`;
       }
 
       const response = await fetch('https://bf1bd891617c.ngrok-free.app/initialize_agent', {
         method: 'POST',
         headers: {
-          'accept': 'application/json',
+          accept: 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -63,18 +62,15 @@ const KnowledgeInputPanel: React.FC = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result = await response.json();
-      console.log('AI Agent initialized successfully:', result);
-      
+      await response.json();
       setSubmitStatus('success');
-      
-      // Clear inputs after successful submission
+
       if (inputMethod === 'text') {
         setTextInput('');
       } else {
         setUploadedFile(null);
       }
-      
+
       setTimeout(() => setSubmitStatus('idle'), 3000);
     } catch (error) {
       console.error('Error initializing AI agent:', error);
@@ -85,39 +81,46 @@ const KnowledgeInputPanel: React.FC = () => {
     }
   };
 
+  const isDisabled =
+    isSubmitting ||
+    (inputMethod === 'text' && !textInput.trim()) ||
+    (inputMethod === 'pdf' && !uploadedFile);
+
   return (
     <div className="h-full flex flex-col">
-      <div className="p-6 border-b border-gray-700">
-        <h2 className="text-xl font-semibold text-yellow-400 mb-2">📚 Teach AI Agent</h2>
-        <p className="text-sm text-gray-400">Share your trading knowledge to improve AI recommendations</p>
+      <div className="p-6 border-b border-gold-500/10">
+        <h2 className="text-xl font-semibold text-white">Teach the Agent</h2>
+        <p className="mt-1 text-sm text-gray-400">Share your trading knowledge to improve recommendations.</p>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto p-6">
         {/* Input Method Selection */}
         <div className="mb-6">
-          <div className="text-sm font-medium text-gray-300 mb-3">Choose input method:</div>
-          <div className="flex space-x-4">
+          <div className="text-sm font-semibold text-gray-300 mb-3">Choose input method</div>
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => setInputMethod('text')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+              className={clsx(
+                'inline-flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-200',
                 inputMethod === 'text'
-                  ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
+                  ? 'bg-gold-500/10 text-gold-300 border-gold-500/25'
+                  : 'bg-ink-800/55 text-gray-300 border-gold-500/10 hover:bg-ink-800/75 hover:border-gold-500/20'
+              )}
             >
               <FileText size={16} />
-              <span>Text</span>
+              <span className="text-sm font-semibold">Text</span>
             </button>
             <button
               onClick={() => setInputMethod('pdf')}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+              className={clsx(
+                'inline-flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-200',
                 inputMethod === 'pdf'
-                  ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
+                  ? 'bg-gold-500/10 text-gold-300 border-gold-500/25'
+                  : 'bg-ink-800/55 text-gray-300 border-gold-500/10 hover:bg-ink-800/75 hover:border-gold-500/20'
+              )}
             >
               <Upload size={16} />
-              <span>Upload PDF</span>
+              <span className="text-sm font-semibold">Upload PDF</span>
             </button>
           </div>
         </div>
@@ -125,33 +128,27 @@ const KnowledgeInputPanel: React.FC = () => {
         {/* Text Input */}
         {inputMethod === 'text' && (
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Share your trading knowledge:
-            </label>
+            <label className="block text-sm font-semibold text-gray-300 mb-2">Share your trading knowledge</label>
             <textarea
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              placeholder="Example: When gold breaks above $2,350 with high volume, it often continues to $2,380. I've noticed this pattern works 70% of the time during bullish market conditions..."
-              className="w-full h-48 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 resize-none"
+              placeholder="Example: When gold breaks above $2,350 with high volume, it often continues to $2,380. I’ve noticed this pattern works ~70% of the time during bullish market conditions…"
+              className="w-full h-48 rounded-xl bg-ink-800/55 border border-gold-500/15 px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-gold-500/35 focus:ring-2 focus:ring-gold-500/15 resize-none"
             />
-            <div className="text-xs text-gray-400 mt-2">
-              {textInput.length}/2000 characters
-            </div>
+            <div className="text-xs text-gray-500 mt-2">{textInput.length}/2000 characters</div>
           </div>
         )}
 
         {/* PDF Upload */}
         {inputMethod === 'pdf' && (
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Upload PDF document:
-            </label>
-            
+            <label className="block text-sm font-semibold text-gray-300 mb-2">Upload PDF document</label>
+
             {!uploadedFile ? (
-              <div className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-yellow-500 transition-colors duration-200">
-                <Upload className="mx-auto text-gray-400 mb-4" size={48} />
-                <div className="text-gray-300 mb-2">Drop your PDF here or click to browse</div>
-                <div className="text-sm text-gray-400 mb-4">Maximum file size: 10MB</div>
+              <div className="rounded-2xl border-2 border-dashed border-gold-500/20 bg-ink-900/25 p-8 text-center transition-colors duration-200 hover:border-gold-500/35">
+                <Upload className="mx-auto text-gray-400 mb-4" size={44} />
+                <div className="text-gray-200 font-semibold mb-1">Drop your PDF here or click to browse</div>
+                <div className="text-sm text-gray-500 mb-5">Maximum file size: 10MB</div>
                 <input
                   type="file"
                   accept=".pdf"
@@ -161,27 +158,26 @@ const KnowledgeInputPanel: React.FC = () => {
                 />
                 <label
                   htmlFor="pdf-upload"
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors duration-200"
+                  className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-gold-500 to-gold-300 px-4 py-2 font-semibold text-ink-900 cursor-pointer transition hover:brightness-105"
                 >
-                  Choose PDF File
+                  Choose PDF
                 </label>
               </div>
             ) : (
-              <div className="bg-gray-700 rounded-lg p-4 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <FileText className="text-red-400" size={24} />
+              <div className="rounded-2xl border border-gold-500/12 bg-ink-800/55 p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <FileText className="text-rose-300" size={22} />
                   <div>
-                    <div className="text-white font-medium">{uploadedFile.name}</div>
-                    <div className="text-sm text-gray-400">
-                      {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </div>
+                    <div className="text-gray-100 font-semibold">{uploadedFile.name}</div>
+                    <div className="text-sm text-gray-500">{(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</div>
                   </div>
                 </div>
                 <button
                   onClick={handleRemoveFile}
-                  className="text-gray-400 hover:text-red-400 transition-colors duration-200"
+                  className="p-2 rounded-xl text-gray-500 hover:text-rose-300 hover:bg-white/5 transition-colors duration-200"
+                  title="Remove"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
             )}
@@ -190,20 +186,23 @@ const KnowledgeInputPanel: React.FC = () => {
 
         {/* Submit Status */}
         {submitStatus !== 'idle' && (
-          <div className={`mb-4 p-3 rounded-lg flex items-center space-x-2 ${
-            submitStatus === 'success' 
-              ? 'bg-green-500/20 border border-green-500/30' 
-              : 'bg-red-500/20 border border-red-500/30'
-          }`}>
+          <div
+            className={clsx(
+              'mb-4 p-3 rounded-xl flex items-center gap-2 border',
+              submitStatus === 'success'
+                ? 'bg-emerald-500/10 border-emerald-500/20'
+                : 'bg-rose-500/10 border-rose-500/20'
+            )}
+          >
             {submitStatus === 'success' ? (
               <>
-                <CheckCircle className="text-green-400" size={16} />
-                <span className="text-green-400 text-sm">Knowledge successfully added to AI training!</span>
+                <CheckCircle className="text-emerald-300" size={16} />
+                <span className="text-emerald-300 text-sm font-semibold">Knowledge successfully added.</span>
               </>
             ) : (
               <>
-                <AlertCircle className="text-red-400" size={16} />
-                <span className="text-red-400 text-sm">Failed to submit knowledge. Please try again.</span>
+                <AlertCircle className="text-rose-300" size={16} />
+                <span className="text-rose-300 text-sm font-semibold">Failed to submit knowledge. Please try again.</span>
               </>
             )}
           </div>
@@ -212,30 +211,35 @@ const KnowledgeInputPanel: React.FC = () => {
         {/* Submit Button */}
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting || (inputMethod === 'text' && !textInput.trim()) || (inputMethod === 'pdf' && !uploadedFile)}
-          className="w-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+          disabled={isDisabled}
+          className={clsx(
+            'w-full py-3 px-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 font-semibold',
+            isDisabled
+              ? 'bg-ink-800/40 text-gray-500 cursor-not-allowed'
+              : 'bg-gradient-to-r from-gold-500 to-gold-300 text-ink-900 hover:brightness-105 shadow-glow'
+          )}
         >
           {isSubmitting ? (
             <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Teaching AI...</span>
+              <div className="w-4 h-4 border-2 border-ink-900/70 border-t-transparent rounded-full animate-spin" />
+              <span>Teaching…</span>
             </>
           ) : (
             <>
               <Send size={16} />
-              <span>Teach AI Agent</span>
+              <span>Teach Agent</span>
             </>
           )}
         </button>
 
-        {/* Information Section */}
-        <div className="mt-8 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-          <h4 className="text-blue-400 font-medium mb-2">💡 Tips for effective teaching:</h4>
+        {/* Information */}
+        <div className="mt-8 rounded-2xl border border-gold-500/10 bg-ink-800/45 p-4">
+          <h4 className="text-gold-300 font-semibold mb-2">Tips</h4>
           <ul className="text-sm text-gray-300 space-y-1">
-            <li>• Share specific trading patterns you've observed</li>
+            <li>• Share specific patterns you’ve observed</li>
             <li>• Include success rates and market conditions</li>
-            <li>• Mention risk management strategies</li>
-            <li>• Provide context about timing and market sentiment</li>
+            <li>• Mention risk management constraints</li>
+            <li>• Provide timing and sentiment context</li>
           </ul>
         </div>
       </div>
@@ -244,3 +248,4 @@ const KnowledgeInputPanel: React.FC = () => {
 };
 
 export default KnowledgeInputPanel;
+

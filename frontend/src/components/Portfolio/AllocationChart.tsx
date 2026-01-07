@@ -17,7 +17,7 @@ const AllocationChart: React.FC<AllocationChartProps> = ({ portfolio }) => {
       name: 'Gold',
       value: goldValue,
       percentage: ((goldValue / totalValue) * 100).toFixed(1),
-      color: '#fbbf24'
+      color: '#D4AF37'
     },
     {
       name: 'ETF',

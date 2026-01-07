@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import clsx from 'clsx';
 import Plot from 'react-plotly.js';
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { Activity, TrendingDown, TrendingUp } from 'lucide-react';
 
 type Commodity = 'gold' | 'silver' | 'cobalt';
 
@@ -45,10 +46,8 @@ const Market: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const timeframes = ['1H', '1D', '1W', '1M'];
-  const indicators = ['D%', 'ADX', 'CCI', 'EMA (20 period)'];
   const commodities: Commodity[] = ['gold', 'silver', 'cobalt'];
 
-  // Generate mock data for different commodities
   const generateMockData = (commodity: Commodity): ChartDataPoint[] => {
     const config = commodityConfigs[commodity];
     return Array.from({ length: 50 }, (_, i) => {
@@ -75,19 +74,18 @@ const Market: React.FC = () => {
       try {
         setLoading(true);
 
-        // Only fetch real data for gold
         if (selectedCommodity === 'gold') {
           const response = await fetch('https://bf1bd891617c.ngrok-free.app/livechart_data', {
             method: 'POST',
             headers: {
-              'accept': 'application/json',
+              accept: 'application/json',
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              trading_pairs: "xau_usd",
-              timezone: "UTC",
+              trading_pairs: 'xau_usd',
+              timezone: 'UTC',
               interval: 3600,
-              sort: "asc",
+              sort: 'asc',
               limit: 100,
               offset: 7001
             })
@@ -100,21 +98,21 @@ const Market: React.FC = () => {
           const contentType = response.headers.get('content-type');
           if (!contentType || !contentType.includes('application/json')) {
             const textResponse = await response.text();
-            throw new Error(`API did not return JSON. Content-Type: ${contentType}. Response: ${textResponse.substring(0, 100)}...`);
+            throw new Error(
+              `API did not return JSON. Content-Type: ${contentType}. Response: ${textResponse.substring(0, 100)}...`
+            );
           }
 
           const data: ApiResponse = await response.json();
           setPriceData(data.data);
           setError(null);
         } else {
-          // Use mock data for silver and cobalt
           setPriceData(generateMockData(selectedCommodity));
           setError(null);
         }
       } catch (err) {
         console.error('Error fetching chart data:', err);
         setError('Failed to load chart data');
-        // Fallback to mock data when API fails
         setPriceData(generateMockData(selectedCommodity));
       } finally {
         setLoading(false);
@@ -124,7 +122,6 @@ const Market: React.FC = () => {
     fetchChartData();
   }, [selectedCommodity]);
 
-  // Calculate market data from API response
   const marketData = priceData.length > 0 ? {
     price: priceData[priceData.length - 1].Close,
     change: priceData.length > 1 ? priceData[priceData.length - 1].Close - priceData[priceData.length - 2].Close : 0,
@@ -142,345 +139,350 @@ const Market: React.FC = () => {
   };
 
   const currentConfig = commodityConfigs[selectedCommodity];
+  const latest = priceData.length > 0 ? priceData[priceData.length - 1] : null;
 
   return (
-    <div className="min-h-screen text-white" style={{ backgroundColor: '#0B1220' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Commodity Selection Tabs */}
-        <div className="mb-6 flex items-center space-x-3">
-          {commodities.map((commodity) => (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Commodity Selection */}
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        {commodities.map((commodity) => {
+          const config = commodityConfigs[commodity];
+          const isSelected = selectedCommodity === commodity;
+
+          return (
             <button
               key={commodity}
               onClick={() => setSelectedCommodity(commodity)}
-              className="px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200"
-              style={{
-                backgroundColor: selectedCommodity === commodity ? commodityConfigs[commodity].color : '#161E2E',
-                color: selectedCommodity === commodity ? '#0B1220' : '#9CA3AF',
-                fontWeight: selectedCommodity === commodity ? 600 : 500
-              }}
+              className={clsx(
+                'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all duration-200',
+                isSelected
+                  ? 'bg-ink-850/55 border-gold-500/25 text-gray-100 shadow-glow'
+                  : 'bg-ink-900/40 border-gold-500/10 text-gray-400 hover:text-gray-100 hover:bg-ink-850/40'
+              )}
             >
-              {commodityConfigs[commodity].name}
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: config.color }} />
+              {config.name}
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Market Header */}
-        <div className="border rounded-2xl mb-8" style={{ backgroundColor: '#121826', borderColor: 'rgba(212, 175, 55, 0.15)', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div>
-              <h1 className="text-lg font-semibold mb-3" style={{ color: '#9CA3AF', letterSpacing: '0.03em' }}>{currentConfig.name} MARKET</h1>
-              <div className="text-5xl font-bold mb-2" style={{ color: currentConfig.color }}>
-                ${marketData.price.toFixed(2)}
-              </div>
-              <div className="flex items-center space-x-2">
-                {marketData.changePercent >= 0 ? (
-                  <TrendingUp size={20} style={{ color: '#16A34A' }} />
-                ) : (
-                  <TrendingDown size={20} style={{ color: '#DC2626' }} />
-                )}
-                <span className="text-lg font-semibold" style={{ color: marketData.changePercent >= 0 ? '#16A34A' : '#DC2626' }}>
-                  {marketData.changePercent >= 0 ? '+' : ''}${marketData.change.toFixed(2)} ({marketData.changePercent >= 0 ? '+' : ''}{marketData.changePercent.toFixed(2)}%)
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-xs font-medium mb-1" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>24H HIGH</div>
-                <div className="text-lg font-semibold" style={{ color: '#E5E7EB' }}>${marketData.high24h.toFixed(2)}</div>
-              </div>
-              <div>
-                <div className="text-xs font-medium mb-1" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>24H LOW</div>
-                <div className="text-lg font-semibold" style={{ color: '#E5E7EB' }}>${marketData.low24h.toFixed(2)}</div>
-              </div>
-              <div>
-                <div className="text-xs font-medium mb-1" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>VOLUME</div>
-                <div className="text-lg font-semibold" style={{ color: '#E5E7EB' }}>{marketData.volume}</div>
-              </div>
-              <div>
-                <div className="text-xs font-medium mb-1" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>MARKET CAP</div>
-                <div className="text-lg font-semibold" style={{ color: '#E5E7EB' }}>$142.8B</div>
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <div className="text-right">
-                <div className="text-xs font-medium mb-2" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>TIMEFRAME</div>
-                <div className="flex space-x-2">
-                  {timeframes.map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setTimeframe(tf)}
-                      className="px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200"
-                      style={{
-                        backgroundColor: timeframe === tf ? '#D4AF37' : '#161E2E',
-                        color: timeframe === tf ? '#0B1220' : '#9CA3AF'
-                      }}
-                    >
-                      {tf}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      {/* Market Header */}
+      <div className="rounded-2xl border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm p-6 mb-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Chart Section */}
-          <div className="lg:col-span-2 h-full">
-            <div className="rounded-2xl overflow-hidden h-full flex flex-col" style={{ backgroundColor: '#121826', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
-              <div className="p-6 border-b" style={{ borderColor: 'rgba(212, 175, 55, 0.1)' }}>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold" style={{ color: '#E5E7EB' }}>Price Chart</h2>
-                  <div className="flex items-center space-x-2">
-                    <Activity size={20} style={{ color: '#9CA3AF' }} />
-                    {loading && <span className="text-sm" style={{ color: '#F59E0B' }}>Loading...</span>}
-                    {error && <span className="text-sm" style={{ color: '#DC2626' }}>API Error</span>}
-                    {!loading && !error && <span className="text-sm" style={{ color: '#16A34A' }}>Live Data</span>}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex-1 overflow-y-auto p-6">
-                {/* Real Chart Area */}
-                <div className="rounded-xl border overflow-hidden mb-6" style={{ backgroundColor: '#0B1220', borderColor: 'rgba(212, 175, 55, 0.1)' }}>
-                  {priceData.length > 0 ? (
-                    <Plot
-                      data={[
-                        {
-                          x: priceData.map(d => d.Date_time),
-                          open: priceData.map(d => d.Open),
-                          high: priceData.map(d => d.High),
-                          low: priceData.map(d => d.Low),
-                          close: priceData.map(d => d.Close),
-                          type: 'candlestick' as const,
-                          increasing: { line: { color: '#16A34A' } },
-                          decreasing: { line: { color: '#DC2626' } },
-                          name: 'Gold Price',
-                          yaxis: 'y'
-                        },
-                        {
-                          x: priceData.map(d => d.Date_time),
-                          y: priceData.map(d => d.EMA_20),
-                          type: 'scatter' as const,
-                          mode: 'lines' as const,
-                          line: { color: '#D4AF37', width: 1.5 },
-                          name: 'EMA (20)',
-                          yaxis: 'y'
-                        }
-                      ]}
-                      layout={{
-                        title: { text: 'Gold Price & Technical Indicators', font: { color: '#9CA3AF', size: 14 } },
-                        paper_bgcolor: '#0B1220',
-                        plot_bgcolor: '#0B1220',
-                        font: { color: '#9CA3AF' },
-                        grid: { rows: 1, columns: 1, pattern: 'independent' },
-                        xaxis: {
-                          gridcolor: '#1F2937',
-                          color: '#6B7280',
-                          type: 'date' as const,
-                          rangeslider: { visible: false }
-                        },
-                        yaxis: {
-                          gridcolor: '#1F2937',
-                          color: '#6B7280',
-                          title: { text: 'Price (USD)', font: { color: '#6B7280' } },
-                          domain: [0, 1]
-                        },
-                        margin: { l: 60, r: 20, t: 40, b: 40 },
-                        height: 400,
-                        showlegend: true,
-                        legend: {
-                          x: 0,
-                          y: 1,
-                          bgcolor: 'rgba(18, 24, 38, 0.8)',
-                          bordercolor: 'rgba(212, 175, 55, 0.2)',
-                          borderwidth: 1
-                        }
-                      }}
-                      config={{
-                        displayModeBar: false,
-                        responsive: true
-                      }}
-                      style={{ width: '100%', height: '100%' }}
-                    />
-                  ) : (
-                    <div className="h-80 flex items-center justify-center">
-                      <div className="text-center">
-                        <Activity size={48} className="mx-auto mb-4" style={{ color: '#D4AF37' }} />
-                        <div style={{ color: '#9CA3AF' }}>Loading Chart Data...</div>
-                        <div className="text-sm mt-2" style={{ color: '#6B7280' }}>
-                          Chart with {timeframe} timeframe
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+          <div>
+            <div className="text-xs font-semibold tracking-[0.18em] text-gold-500">
+              {currentConfig.name} MARKET
+            </div>
+            <div
+              className={clsx(
+                'mt-3 text-4xl sm:text-5xl font-bold',
+                selectedCommodity === 'gold' ? 'bg-gradient-to-r from-gold-500 to-gold-300 bg-clip-text text-transparent' : ''
+              )}
+              style={selectedCommodity === 'gold' ? undefined : { color: currentConfig.color }}
+            >
+              ${marketData.price.toFixed(2)}
+            </div>
 
-                {/* Technical Indicators - Pill Style */}
-                <div className="flex flex-wrap gap-3 mb-6">
-                  <div className="inline-flex items-center px-4 py-2 rounded-full border" style={{ backgroundColor: '#161E2E', borderColor: 'rgba(212, 175, 55, 0.2)' }}>
-                    <span className="text-xs font-medium mr-2" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>EMA 20:</span>
-                    <span className="text-sm font-semibold" style={{ color: '#E5E7EB' }}>
-                      ${priceData.length > 0 ? priceData[priceData.length - 1]?.EMA_20?.toFixed(2) : 'Loading...'}
-                    </span>
-                  </div>
-                  <div className="inline-flex items-center px-4 py-2 rounded-full border" style={{ backgroundColor: '#161E2E', borderColor: 'rgba(212, 175, 55, 0.2)' }}>
-                    <span className="text-xs font-medium mr-2" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>Stochastic %D:</span>
-                    <span className="text-sm font-semibold" style={{ color: '#E5E7EB' }}>
-                      {priceData.length > 0 ? priceData[priceData.length - 1]?.Stochastic_D?.toFixed(1) : 'Loading...'}
-                    </span>
-                  </div>
-                  <div className="inline-flex items-center px-4 py-2 rounded-full border" style={{ backgroundColor: '#161E2E', borderColor: 'rgba(212, 175, 55, 0.2)' }}>
-                    <span className="text-xs font-medium mr-2" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>CCI:</span>
-                    <span className="text-sm font-semibold" style={{ color: '#E5E7EB' }}>
-                      {priceData.length > 0 ? priceData[priceData.length - 1]?.CCI?.toFixed(1) : 'Loading...'}
-                    </span>
-                  </div>
-                  <div className="inline-flex items-center px-4 py-2 rounded-full border" style={{ backgroundColor: '#161E2E', borderColor: 'rgba(212, 175, 55, 0.2)' }}>
-                    <span className="text-xs font-medium mr-2" style={{ color: '#6B7280', letterSpacing: '0.03em' }}>ADX:</span>
-                    <span className="text-sm font-semibold" style={{ color: '#E5E7EB' }}>
-                      {priceData.length > 0 ? priceData[priceData.length - 1]?.ADX?.toFixed(1) : 'Loading...'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Technical Analysis Summary - Badge Style */}
-                <div className="rounded-xl p-5" style={{ backgroundColor: '#161E2E', boxShadow: '0 4px 15px rgba(0,0,0,0.25)' }}>
-                  <h4 className="font-semibold mb-4" style={{ color: '#E5E7EB' }}>Technical Analysis</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm" style={{ color: '#9CA3AF' }}>EMA (20):</span>
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-semibold"
-                        style={{
-                          backgroundColor: priceData.length > 0 && priceData[priceData.length - 1]?.Close > priceData[priceData.length - 1]?.EMA_20
-                            ? 'rgba(22, 163, 74, 0.2)' : 'rgba(220, 38, 38, 0.2)',
-                          color: priceData.length > 0 && priceData[priceData.length - 1]?.Close > priceData[priceData.length - 1]?.EMA_20
-                            ? '#16A34A' : '#DC2626'
-                        }}
-                      >
-                        {priceData.length > 0 && priceData[priceData.length - 1]?.Close > priceData[priceData.length - 1]?.EMA_20
-                          ? 'Bullish' : 'Bearish'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm" style={{ color: '#9CA3AF' }}>Stochastic:</span>
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-semibold"
-                        style={{
-                          backgroundColor: priceData.length > 0 && priceData[priceData.length - 1]?.Stochastic_D > 80
-                            ? 'rgba(220, 38, 38, 0.2)' : priceData[priceData.length - 1]?.Stochastic_D < 20
-                            ? 'rgba(22, 163, 74, 0.2)' : 'rgba(156, 163, 175, 0.2)',
-                          color: priceData.length > 0 && priceData[priceData.length - 1]?.Stochastic_D > 80
-                            ? '#DC2626' : priceData[priceData.length - 1]?.Stochastic_D < 20
-                            ? '#16A34A' : '#9CA3AF'
-                        }}
-                      >
-                        {priceData.length > 0 && priceData[priceData.length - 1]?.Stochastic_D > 80
-                          ? 'Overbought' : priceData[priceData.length - 1]?.Stochastic_D < 20
-                          ? 'Oversold' : 'Neutral'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm" style={{ color: '#9CA3AF' }}>CCI:</span>
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-semibold"
-                        style={{
-                          backgroundColor: priceData.length > 0 && priceData[priceData.length - 1]?.CCI > 100
-                            ? 'rgba(220, 38, 38, 0.2)' : priceData[priceData.length - 1]?.CCI < -100
-                            ? 'rgba(22, 163, 74, 0.2)' : 'rgba(56, 189, 248, 0.2)',
-                          color: priceData.length > 0 && priceData[priceData.length - 1]?.CCI > 100
-                            ? '#DC2626' : priceData[priceData.length - 1]?.CCI < -100
-                            ? '#16A34A' : '#38BDF8'
-                        }}
-                      >
-                        {priceData.length > 0 && priceData[priceData.length - 1]?.CCI > 100
-                          ? 'Overbought' : priceData[priceData.length - 1]?.CCI < -100
-                          ? 'Oversold' : 'Normal'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm" style={{ color: '#9CA3AF' }}>ADX:</span>
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-semibold"
-                        style={{
-                          backgroundColor: priceData.length > 0 && priceData[priceData.length - 1]?.ADX > 50
-                            ? 'rgba(22, 163, 74, 0.2)' : priceData[priceData.length - 1]?.ADX > 25
-                            ? 'rgba(245, 158, 11, 0.2)' : 'rgba(220, 38, 38, 0.2)',
-                          color: priceData.length > 0 && priceData[priceData.length - 1]?.ADX > 50
-                            ? '#16A34A' : priceData[priceData.length - 1]?.ADX > 25
-                            ? '#F59E0B' : '#DC2626'
-                        }}
-                      >
-                        {priceData.length > 0 && priceData[priceData.length - 1]?.ADX > 50
-                          ? 'Strong' : priceData[priceData.length - 1]?.ADX > 25
-                          ? 'Moderate' : 'Weak'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {priceData.length > 0 && (
-                  <div className="mt-4 text-xs text-center" style={{ color: '#6B7280' }}>
-                    Showing {priceData.length} data points • Last updated: {new Date().toLocaleTimeString()}
-                  </div>
+            <div className="mt-2 flex items-center gap-2">
+              {marketData.changePercent >= 0 ? (
+                <TrendingUp size={18} className="text-emerald-400" />
+              ) : (
+                <TrendingDown size={18} className="text-rose-400" />
+              )}
+              <span
+                className={clsx(
+                  'text-base font-semibold',
+                  marketData.changePercent >= 0 ? 'text-emerald-300' : 'text-rose-300'
                 )}
-              </div>
+              >
+                {marketData.changePercent >= 0 ? '+' : ''}${marketData.change.toFixed(2)} (
+                {marketData.changePercent >= 0 ? '+' : ''}
+                {marketData.changePercent.toFixed(2)}%)
+              </span>
             </div>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="space-y-8">
-            {/* Order Book */}
-            <div className="rounded-2xl p-6" style={{ backgroundColor: '#121826', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
-              <h2 className="text-xl font-semibold mb-4" style={{ color: '#E5E7EB' }}>Order Book</h2>
-              <div className="space-y-3">
-                <div className="text-xs font-medium grid grid-cols-2 gap-4 pb-3 border-b" style={{ color: '#6B7280', letterSpacing: '0.03em', borderColor: 'rgba(212, 175, 55, 0.1)' }}>
-                  <span>PRICE (USD)</span>
-                  <span className="text-right">SIZE (OZ)</span>
-                </div>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <div className="text-xs font-semibold tracking-[0.18em] text-gray-500 mb-1">24H HIGH</div>
+              <div className="text-lg font-semibold text-gray-100">${marketData.high24h.toFixed(2)}</div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold tracking-[0.18em] text-gray-500 mb-1">24H LOW</div>
+              <div className="text-lg font-semibold text-gray-100">${marketData.low24h.toFixed(2)}</div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold tracking-[0.18em] text-gray-500 mb-1">VOLUME</div>
+              <div className="text-lg font-semibold text-gray-100">{marketData.volume}</div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold tracking-[0.18em] text-gray-500 mb-1">MARKET CAP</div>
+              <div className="text-lg font-semibold text-gray-100">$142.8B</div>
+            </div>
+          </div>
 
-                {/* Asks */}
-                <div className="space-y-2">
-                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#DC2626' }}>
-                    <span className="font-medium">2,348.50</span>
-                    <span className="text-right" style={{ color: '#9CA3AF' }}>1.2</span>
-                  </div>
-                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#DC2626' }}>
-                    <span className="font-medium">2,347.25</span>
-                    <span className="text-right" style={{ color: '#9CA3AF' }}>2.8</span>
-                  </div>
-                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#DC2626' }}>
-                    <span className="font-medium">2,346.00</span>
-                    <span className="text-right" style={{ color: '#9CA3AF' }}>1.5</span>
-                  </div>
-                </div>
+          <div className="flex justify-start lg:justify-end">
+            <div className="lg:text-right">
+              <div className="text-xs font-semibold tracking-[0.18em] text-gray-500 mb-2">TIMEFRAME</div>
+              <div className="flex flex-wrap gap-2 lg:justify-end">
+                {timeframes.map((tf) => (
+                  <button
+                    key={tf}
+                    onClick={() => setTimeframe(tf)}
+                    className={clsx(
+                      'px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 border',
+                      timeframe === tf
+                        ? 'bg-gold-500/10 border-gold-500/30 text-gold-300'
+                        : 'bg-ink-900/40 border-gold-500/10 text-gray-400 hover:text-gray-100 hover:bg-ink-850/40'
+                    )}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                {/* Current Price - Highlighted */}
-                <div className="py-3 px-3 text-center rounded-lg" style={{ backgroundColor: 'rgba(212, 175, 55, 0.15)' }}>
-                  <span className="font-bold text-lg" style={{ color: '#D4AF37' }}>${marketData.price.toFixed(2)}</span>
-                </div>
-
-                {/* Bids */}
-                <div className="space-y-2">
-                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#16A34A' }}>
-                    <span className="font-medium">2,344.75</span>
-                    <span className="text-right" style={{ color: '#9CA3AF' }}>3.1</span>
-                  </div>
-                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#16A34A' }}>
-                    <span className="font-medium">2,343.50</span>
-                    <span className="text-right" style={{ color: '#9CA3AF' }}>2.4</span>
-                  </div>
-                  <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded" style={{ color: '#16A34A' }}>
-                    <span className="font-medium">2,342.25</span>
-                    <span className="text-right" style={{ color: '#9CA3AF' }}>1.8</span>
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Chart Section */}
+        <div className="lg:col-span-2 h-full">
+          <div className="rounded-2xl overflow-hidden h-full flex flex-col border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm">
+            <div className="p-6 border-b border-gold-500/10">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Price Chart</h2>
+                <div className="flex items-center gap-2">
+                  <Activity size={18} className="text-gray-400" />
+                  {loading && <span className="text-sm text-amber-300">Loading...</span>}
+                  {error && <span className="text-sm text-rose-300">API Error</span>}
+                  {!loading && !error && <span className="text-sm text-emerald-300">Live Data</span>}
                 </div>
               </div>
             </div>
 
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Chart */}
+              <div className="rounded-xl border border-gold-500/10 bg-ink-900/60 overflow-hidden mb-6">
+                {priceData.length > 0 ? (
+                  <Plot
+                    data={[
+                      {
+                        x: priceData.map(d => d.Date_time),
+                        open: priceData.map(d => d.Open),
+                        high: priceData.map(d => d.High),
+                        low: priceData.map(d => d.Low),
+                        close: priceData.map(d => d.Close),
+                        type: 'candlestick' as const,
+                        increasing: { line: { color: '#16A34A' } },
+                        decreasing: { line: { color: '#DC2626' } },
+                        name: 'Price',
+                        yaxis: 'y'
+                      },
+                      {
+                        x: priceData.map(d => d.Date_time),
+                        y: priceData.map(d => d.EMA_20),
+                        type: 'scatter' as const,
+                        mode: 'lines' as const,
+                        line: { color: '#D4AF37', width: 1.5 },
+                        name: 'EMA (20)',
+                        yaxis: 'y'
+                      }
+                    ]}
+                    layout={{
+                      title: { text: `${currentConfig.name} Price & Technical Indicators`, font: { color: '#9CA3AF', size: 14 } },
+                      paper_bgcolor: '#0B1220',
+                      plot_bgcolor: '#0B1220',
+                      font: { color: '#9CA3AF' },
+                      grid: { rows: 1, columns: 1, pattern: 'independent' },
+                      xaxis: {
+                        gridcolor: '#1F2937',
+                        color: '#6B7280',
+                        type: 'date' as const,
+                        rangeslider: { visible: false }
+                      },
+                      yaxis: {
+                        gridcolor: '#1F2937',
+                        color: '#6B7280',
+                        title: { text: 'Price (USD)', font: { color: '#6B7280' } },
+                        domain: [0, 1]
+                      },
+                      margin: { l: 60, r: 20, t: 40, b: 40 },
+                      height: 400,
+                      showlegend: true,
+                      legend: {
+                        x: 0,
+                        y: 1,
+                        bgcolor: 'rgba(11, 18, 32, 0.82)',
+                        bordercolor: 'rgba(212, 175, 55, 0.2)',
+                        borderwidth: 1
+                      }
+                    }}
+                    config={{
+                      displayModeBar: false,
+                      responsive: true
+                    }}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                ) : (
+                  <div className="h-80 flex items-center justify-center">
+                    <div className="text-center">
+                      <Activity size={44} className="mx-auto mb-3 text-gold-500" />
+                      <div className="text-gray-300">Loading chart data...</div>
+                      <div className="text-sm mt-2 text-gray-500">Chart with {timeframe} timeframe</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Indicator Pills */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold-500/15 bg-ink-800/55">
+                  <span className="text-xs font-semibold tracking-[0.18em] text-gray-500">EMA 20</span>
+                  <span className="text-sm font-semibold text-gray-100">
+                    {latest ? `$${latest.EMA_20.toFixed(2)}` : '—'}
+                  </span>
+                </div>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold-500/15 bg-ink-800/55">
+                  <span className="text-xs font-semibold tracking-[0.18em] text-gray-500">STOCH %D</span>
+                  <span className="text-sm font-semibold text-gray-100">
+                    {latest ? latest.Stochastic_D.toFixed(1) : '—'}
+                  </span>
+                </div>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold-500/15 bg-ink-800/55">
+                  <span className="text-xs font-semibold tracking-[0.18em] text-gray-500">CCI</span>
+                  <span className="text-sm font-semibold text-gray-100">
+                    {latest ? latest.CCI.toFixed(1) : '—'}
+                  </span>
+                </div>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold-500/15 bg-ink-800/55">
+                  <span className="text-xs font-semibold tracking-[0.18em] text-gray-500">ADX</span>
+                  <span className="text-sm font-semibold text-gray-100">
+                    {latest ? latest.ADX.toFixed(1) : '—'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Technical Summary */}
+              <div className="rounded-xl border border-gold-500/10 bg-ink-800/55 p-5 shadow-[0_4px_15px_rgba(0,0,0,0.25)]">
+                <h4 className="font-semibold text-white mb-4">Technical Analysis</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">EMA (20)</span>
+                    <span
+                      className={clsx(
+                        'px-3 py-1 rounded-full text-xs font-semibold',
+                        latest && latest.Close > latest.EMA_20
+                          ? 'bg-emerald-500/15 text-emerald-300'
+                          : 'bg-rose-500/15 text-rose-300'
+                      )}
+                    >
+                      {latest && latest.Close > latest.EMA_20 ? 'Bullish' : 'Bearish'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Stochastic</span>
+                    <span
+                      className={clsx(
+                        'px-3 py-1 rounded-full text-xs font-semibold',
+                        latest && latest.Stochastic_D > 80
+                          ? 'bg-rose-500/15 text-rose-300'
+                          : latest && latest.Stochastic_D < 20
+                            ? 'bg-emerald-500/15 text-emerald-300'
+                            : 'bg-white/10 text-gray-300'
+                      )}
+                    >
+                      {latest && latest.Stochastic_D > 80 ? 'Overbought' : latest && latest.Stochastic_D < 20 ? 'Oversold' : 'Neutral'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">CCI</span>
+                    <span
+                      className={clsx(
+                        'px-3 py-1 rounded-full text-xs font-semibold',
+                        latest && latest.CCI > 100
+                          ? 'bg-rose-500/15 text-rose-300'
+                          : latest && latest.CCI < -100
+                            ? 'bg-emerald-500/15 text-emerald-300'
+                            : 'bg-sky-500/15 text-sky-300'
+                      )}
+                    >
+                      {latest && latest.CCI > 100 ? 'Overbought' : latest && latest.CCI < -100 ? 'Oversold' : 'Normal'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">ADX</span>
+                    <span
+                      className={clsx(
+                        'px-3 py-1 rounded-full text-xs font-semibold',
+                        latest && latest.ADX > 50
+                          ? 'bg-emerald-500/15 text-emerald-300'
+                          : latest && latest.ADX > 25
+                            ? 'bg-amber-500/15 text-amber-300'
+                            : 'bg-rose-500/15 text-rose-300'
+                      )}
+                    >
+                      {latest && latest.ADX > 50 ? 'Strong' : latest && latest.ADX > 25 ? 'Moderate' : 'Weak'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {priceData.length > 0 && (
+                <div className="mt-4 text-xs text-center text-gray-500">
+                  Showing {priceData.length} data points • Last updated: {new Date().toLocaleTimeString()}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar */}
+        <div className="space-y-8">
+          {/* Order Book */}
+          <div className="rounded-2xl border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Order Book</h2>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold tracking-[0.18em] grid grid-cols-2 gap-4 pb-3 border-b border-gold-500/10 text-gray-500">
+                <span>PRICE (USD)</span>
+                <span className="text-right">SIZE (OZ)</span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-rose-300">
+                  <span className="font-medium">2,348.50</span>
+                  <span className="text-right text-gray-400">1.2</span>
+                </div>
+                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-rose-300">
+                  <span className="font-medium">2,347.25</span>
+                  <span className="text-right text-gray-400">2.8</span>
+                </div>
+                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-rose-300">
+                  <span className="font-medium">2,346.00</span>
+                  <span className="text-right text-gray-400">1.5</span>
+                </div>
+              </div>
+
+              <div className="py-3 px-3 text-center rounded-lg bg-gold-500/10 border border-gold-500/15">
+                <span className="font-bold text-lg text-gold-300">${marketData.price.toFixed(2)}</span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-emerald-300">
+                  <span className="font-medium">2,344.75</span>
+                  <span className="text-right text-gray-400">3.1</span>
+                </div>
+                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-emerald-300">
+                  <span className="font-medium">2,343.50</span>
+                  <span className="text-right text-gray-400">2.4</span>
+                </div>
+                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-emerald-300">
+                  <span className="font-medium">2,342.25</span>
+                  <span className="text-right text-gray-400">1.8</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -489,3 +491,4 @@ const Market: React.FC = () => {
 };
 
 export default Market;
+
