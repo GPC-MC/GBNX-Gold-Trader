@@ -14,13 +14,13 @@ const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
 
   const primaryNavItems = [
-    { path: '/', icon: Briefcase, label: 'Portfolio' },
-    { path: '/market', icon: TrendingUp, label: 'Market' }
+    { path: '/dashboard', icon: Briefcase, label: 'Portfolio' },
+    { path: '/dashboard/market', icon: TrendingUp, label: 'Market' }
   ];
 
   const secondaryNavItems = [
-    { path: '/news', icon: Newspaper, label: 'Market News' },
-    { path: '/ai-studio', icon: Bot, label: 'AI Studio' }
+    { path: '/dashboard/news', icon: Newspaper, label: 'Market News' },
+    { path: '/dashboard/ai-studio', icon: Bot, label: 'AI Studio' }
   ];
 
   return (
@@ -37,10 +37,11 @@ const Navbar: React.FC = () => {
                 <NavLink
                   key={path}
                   to={path}
+                  end={path === '/dashboard'}
                   className={({ isActive }) =>
                     `relative flex items-center px-4 py-2 transition-all duration-200 rounded-lg ${
                       isActive
-                        ? 'after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#D4AF37] after:shadow-[0_0_12px_rgba(212,175,55,0.8)]'
+                        ? 'active after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#D4AF37] after:shadow-[0_0_12px_rgba(212,175,55,0.8)]'
                         : ''
                     }`
                   }
@@ -78,7 +79,7 @@ const Navbar: React.FC = () => {
                   className={({ isActive }) =>
                     `relative flex items-center px-4 py-2 transition-all duration-200 rounded-lg ${
                       isActive
-                        ? 'after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#D4AF37] after:shadow-[0_0_12px_rgba(212,175,55,0.8)]'
+                        ? 'active after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#D4AF37] after:shadow-[0_0_12px_rgba(212,175,55,0.8)]'
                         : ''
                     }`
                   }
@@ -120,10 +121,10 @@ const Navbar: React.FC = () => {
             <div className="flex items-center space-x-3">
               {/* Profile Link */}
               <NavLink
-                to="/profile"
+                to="/dashboard/profile"
                 className={({ isActive }) =>
                   `p-2 rounded-lg transition-all duration-200 ${
-                    isActive ? 'bg-[rgba(212,175,55,0.08)]' : ''
+                    isActive ? 'active bg-[rgba(212,175,55,0.08)]' : ''
                   }`
                 }
                 style={({ isActive }) => ({
