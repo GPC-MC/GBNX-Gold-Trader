@@ -21,6 +21,19 @@ def create_langgraph_react_agent(
     tools: Sequence[Union[Callable, BaseTool]],
     prompt: str,
 ):
+    """
+    Create a LangGraph ReAct agent, wrapping plain callables into `StructuredTool`.
+
+    Example (function-calling tool):
+        from langchain_core.tools import StructuredTool
+
+        generate_web_tool = StructuredTool.from_function(
+            func=web_gen.generate_web,
+            name="generate_web",
+            description="Generate a complete HTML web page about a topic.",
+            args_schema=GenerateWebInput,
+        )
+    """
     wrapped_tools: List[BaseTool] = []
     for tool in tools:
         if isinstance(tool, BaseTool):
@@ -425,3 +438,5 @@ If a current HTML link is provided in the context, you can use it with the chang
         )
         if insert_result.get("status") == "success" and insert_result.get("inserted_count", 0) > 0:
             console.print(f"[dim]💾 Saved {insert_result['inserted_count']} new URL(s) to database[/]")
+
+

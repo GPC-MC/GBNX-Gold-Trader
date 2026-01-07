@@ -4,13 +4,13 @@ from typing import List
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.tools import tool
+from langchain_core.tools import StructuredTool, tool
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel
 from src.app_config import app_config
 from src.database_handler.mongodb_handler import MemoryHandler
 from src.database_handler.qdrant_connector import QdrantDBClient
+from src.base_agent import create_langgraph_react_agent
 from src.schema import (
     ConversationInfor,
 
@@ -19,7 +19,6 @@ from src.schema import (
     UserThread,
 )
 
-from src.tools import get_livechart_data
 from src.llm import FallbackLLM
 import numpy as np 
 import pandas as pd
@@ -45,8 +44,8 @@ class LiveChartRequest(BaseModel):
     timezone: str = "UTC"
     interval: int = 3600
     sort: str = "asc"
-    limit: int = 2
-    offset: int = 7001
+    limit: int = 50
+    offset: int = 6950
 
 
 
@@ -172,7 +171,7 @@ def get_livechart_data(payload: LiveChartRequest) -> Optional[Dict[str, Any]]:
     Fetch live chart data from the API endpoint and add technical indicators.
     """
     base_url = "https://gpcintegral.southeastasia.cloudapp.azure.com/livechart/data/"
-    params = payload.dict()
+    params = payload.model_dump()
     
     try:
         logger.info(f"Fetching data for {payload.trading_pairs} with params: {params}")
@@ -206,18 +205,25 @@ def get_livechart_data(payload: LiveChartRequest) -> Optional[Dict[str, Any]]:
         return None
 
 
-def fetch_more_data_for_indicators():
+def fetch_more_data_for_indicators(
+    trading_pairs: str = "xau_usd",
+    timezone: str = "UTC",
+    interval: int = 3600,
+    sort: str = "asc",
+    limit: int = 50,
+    offset: int = 6950,
+):
     """
     Fetch more data points to ensure reliable technical indicator calculations.
     Recommended for testing with sufficient data.
     """
     req = LiveChartRequest(
-        trading_pairs="xau_usd",
-        timezone="UTC",
-        interval=3600,
-        sort="asc",
-        limit=50,  # Get more data points for better indicator accuracy
-        offset=6950  # Start earlier to get enough historical data
+        trading_pairs=trading_pairs,
+        timezone=timezone,
+        interval=interval,
+        sort=sort,
+        limit=limit,  # Get more data points for better indicator accuracy
+        offset=offset,  # Start earlier to get enough historical data
     )
     return get_livechart_data(req)
 
@@ -228,15 +234,26 @@ class Agent:
         self.memory_handler = MemoryHandler(db_name="test", collection_name="test")
         self.memory_handler.connect_to_database()
         self.llm = FallbackLLM(openai_model="gpt-4.1-2025-04-14")
-        self.tools = [self.database_handler.search_similar_texts, fetch_more_data_for_indicators]
-        self.react_agent = create_react_agent(
+        fetch_more_data_for_indicators_tool = StructuredTool.from_function(
+            func=fetch_more_data_for_indicators,
+            name="fetch_more_data_for_indicators",
+            description="Fetch live chart data and add technical indicators (EMA_20, Stochastic_D, CCI, ADX).",
+            args_schema=LiveChartRequest,
+        )
+        self.tools = [
+            self.database_handler.search_similar_texts,
+            fetch_more_data_for_indicators_tool,
+        ]
+        self.react_agent = create_langgraph_react_agent(
             self.llm, tools=self.tools, prompt=SYSTEM_PROMPT + expert_prompt
         )
 
     def generate_response(self, input: str) -> str:
-        ans = self.react_agent.invoke({"input": input})
-        res = ans.content
-        return res
+        result = self.react_agent.invoke({"messages": [{"role": "user", "content": input}]})
+        message = result.get("messages", [])[-1] if isinstance(result, dict) else result
+        if isinstance(message, tuple):
+            return str(message)
+        return getattr(message, "content", str(message))
 
     def print_stream(self, user_question: UserQuestion):
         self.question = user_question.question

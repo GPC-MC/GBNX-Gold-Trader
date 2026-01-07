@@ -19,9 +19,6 @@ from google.genai import types
 from langchain_core.messages import AIMessage, ToolCall
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel
-
-
-
 from src.app_config import app_config
 
 logging.basicConfig(level=logging.INFO)
@@ -47,8 +44,12 @@ class GeminiClientWrapper:
     ):
         self.model = model
         self.temperature = temperature
-        gemini_api_key = api_key or app_config.GEMINI_API_KEY
-        self.client = genai.Client(api_key=gemini_api_key) if gemini_api_key else genai.Client()
+        google_api_key = api_key or app_config.GOOGLE_API_KEY or app_config.GEMINI_API_KEY
+
+        print(google_api_key)
+        self.client = (
+            genai.Client(api_key=google_api_key) if google_api_key else genai.Client()
+        )
         
         # Tool binding state
         self._tools: Optional[List[types.Tool]] = None
@@ -768,7 +769,7 @@ if __name__ == "__main__":
         print("Testing Gemini Client")
         print("=" * 50)
         try:
-            gemini = GeminiClientWrapper(model="gemini-2.5-flash")
+            gemini = GeminiClientWrapper(model="gemini-2.5-flash-lite")
             response = gemini.invoke("Say hello in one sentence.")
             print(f"Gemini Response: {response.content}")
             print("✅ Gemini test passed!")
@@ -830,78 +831,27 @@ if __name__ == "__main__":
             print(f"❌ Async test failed: {e}")
 
 
-
-    from langchain_core.tools import tool
-
-    @tool
-    def get_weather(location: str) -> str:
-        """Get weather for a location."""
-        return f"Weather in {location}: Sunny, 72°F"
-
-    # Bind tools to Gemini
-    llm = FallbackLLM(gemini_model="gemini-2.5-flash", openai_model="skip")
-    llm_with_tools = llm.bind_tools([get_weather])
-    response = llm_with_tools.invoke("What's the weather in Tokyo?")
-    print(response.tool_calls)  # [ToolCall(name='get_weather', args={'location': 'Tokyo'}, ...)]
-    # import pdb; pdb.set_trace()
-
-    # def test_openai_web_search():
-    #     """Test OpenAI with web search enabled."""
-    #     print("\n" + "=" * 50)
-    #     print("Testing OpenAI with Web Search")
-    #     print("=" * 50)
-    #     try:
-    #         llm = FallbackLLM(
-    #             openai_model="gpt-4.1-mini",
-    #             enable_web_search=True,
-    #             temperature=0.2
-    #         )
-    #         # Ask a question that benefits from web search (current events)
-    #         response = llm.invoke(
-    #             "What is the current price of Bitcoin today? Give a brief answer.",
-    #             use_web_search=True
-    #         )
-    #         print(f"Web Search Response: {response.content}")
-    #         print("✅ OpenAI web search test passed!")
-    #     except Exception as e:
-    #         print(f"❌ OpenAI web search test failed: {e}")
-
-    # def test_openai_web_search_with_reasoning():
-    #     """Test OpenAI with web search and reasoning level."""
-    #     print("\n" + "=" * 50)
-    #     print("Testing OpenAI Web Search with Reasoning Level")
-    #     print("=" * 50)
-    #     try:
-    #         llm = FallbackLLM(
-    #             openai_model="gpt-4.1-mini",
-    #             enable_web_search=True,
-    #             temperature=0.2
-    #         )
-    #         # Test with_web_search method
-    #         llm_with_search = llm.with_web_search(enable=True, reasoning_level="medium")
-    #         response = llm_with_search.invoke(
-    #             "What are the latest news about AI today? Summarize briefly."
-    #         )
-    #         print(f"Web Search with Reasoning Response: {response.content}")
-    #         print("✅ OpenAI web search with reasoning test passed!")
-    #     except Exception as e:
-    #         print(f"❌ OpenAI web search with reasoning test failed: {e}")
-
-    # Run all tests
-    print("\n🚀 Starting LLM Tests\n")
-    
     test_gemini()
-    test_openai()
-    test_fallback_llm()
-    test_streaming()
-    asyncio.run(test_async())
-    # test_openai_web_search()
-    # test_openai_web_search_with_reasoning()
-    
-    print("\n" + "=" * 50)
-    print("All tests completed!")
-    print("=" * 50)
 
+
+    # from langchain_core.tools import tool
+    # @tool
+    # def get_weather(location: str) -> str:
+    #     return f"Weather in {location}: Sunny, 72°F"
+
+    # llm = FallbackLLM(gemini_model="gemini-2.5-flash", openai_model="skip")
+    # llm_with_tools = llm.bind_tools([get_weather])
+    # response = llm_with_tools.invoke("What's the weather in Tokyo?")
+    # print(response.tool_calls)  # [ToolCall(name='get_weather', args={'location': 'Tokyo'}, ...)]
+    # print("\n🚀 Starting LLM Tests\n")
+    
+    # test_openai()
+    # test_fallback_llm()
+    # test_streaming()
+    # asyncio.run(test_async())
+    # print("\n" + "=" * 50)
+    # print("All tests completed!")
+    # print("=" * 50)
 
 
 

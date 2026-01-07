@@ -80,6 +80,7 @@ class AppConfig(BaseSettings):
     TAVILY_MODEL: Optional[str] = None
     GCS_BUCKET_NAME: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
+    
 
 
 # Initialize the configuration
