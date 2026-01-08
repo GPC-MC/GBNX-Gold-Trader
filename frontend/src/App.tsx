@@ -7,6 +7,7 @@ import DashboardLayout from './components/Layout/DashboardLayout';
 import Market from './components/Market/Market';
 import Portfolio from './components/Portfolio/Portfolio';
 import AIStudio from './components/AIStudio/AIStudio';
+import GoldAIAssistantPage from './components/GoldAIAssistant/GoldAIAssistantPage';
 import Profile from './components/Profile/Profile';
 import MarketNews from './components/News/MarketNews';
 import LandingPage from './components/Landing/LandingPage';
@@ -31,6 +32,7 @@ function App() {
             <Route path="news" element={<MarketNews />} />
             <Route path="portfolio" element={<Portfolio />} />
             <Route path="ai-studio" element={<AIStudio />} />
+            <Route path="ai-studio/gold-ai-assistant" element={<GoldAIAssistantPage />} />
             <Route path="profile" element={<Profile />} />
           </Route>
 
