@@ -20,6 +20,14 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
+            path="/gold-ai-assistant"
+            element={
+              <ProtectedRoute>
+                <GoldAIAssistantPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
@@ -32,7 +40,6 @@ function App() {
             <Route path="news" element={<MarketNews />} />
             <Route path="portfolio" element={<Portfolio />} />
             <Route path="ai-studio" element={<AIStudio />} />
-            <Route path="ai-studio/gold-ai-assistant" element={<GoldAIAssistantPage />} />
             <Route path="profile" element={<Profile />} />
           </Route>
 
@@ -41,6 +48,7 @@ function App() {
           <Route path="/news" element={<Navigate to="/dashboard/news" replace />} />
           <Route path="/portfolio" element={<Navigate to="/dashboard" replace />} />
           <Route path="/ai-studio" element={<Navigate to="/dashboard/ai-studio" replace />} />
+          <Route path="/dashboard/ai-studio/gold-ai-assistant" element={<Navigate to="/gold-ai-assistant" replace />} />
           <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />

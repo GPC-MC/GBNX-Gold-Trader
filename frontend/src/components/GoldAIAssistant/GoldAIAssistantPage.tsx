@@ -122,9 +122,16 @@ const GoldAIAssistantPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex flex-col">
-      <div className="sticky top-16 z-40 border-b border-gold-500/10 bg-ink-950/65 backdrop-blur">
-        <div className="mx-auto w-full max-w-[980px] px-4 sm:px-6">
+    <div className="relative min-h-screen bg-ink-950 text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-44 left-1/2 h-[560px] w-[980px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(212,175,55,0.20),_transparent_62%)] blur-3xl" />
+        <div className="absolute -bottom-64 right-[-220px] h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,_rgba(242,210,124,0.10),_transparent_62%)] blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(5,6,10,0.0),rgba(5,6,10,0.92))]" />
+      </div>
+
+      <div className="relative min-h-screen flex flex-col">
+        <div className="sticky top-0 z-40 border-b border-gold-500/10 bg-ink-950/65 backdrop-blur">
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="h-14 flex items-center gap-3">
             <Link
               to="/dashboard/ai-studio"
@@ -152,7 +159,7 @@ const GoldAIAssistantPage: React.FC = () => {
                 isUser ? 'bg-transparent' : 'bg-ink-900/30'
               )}
             >
-              <div className="mx-auto w-full max-w-[980px] px-4 sm:px-6 py-7">
+              <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-7">
                 <div className="flex gap-4">
                   <div
                     className={clsx(
@@ -225,7 +232,7 @@ const GoldAIAssistantPage: React.FC = () => {
 
         {isTyping && (
           <div className="w-full border-b border-white/5 bg-ink-900/30">
-            <div className="mx-auto w-full max-w-[980px] px-4 sm:px-6 py-7">
+            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-7">
               <div className="flex gap-4">
                 <div className="mt-0.5 h-9 w-9 shrink-0 rounded-xl border border-gold-500/15 bg-ink-800/55 flex items-center justify-center text-xs font-semibold text-gold-300">
                   AI
@@ -256,7 +263,7 @@ const GoldAIAssistantPage: React.FC = () => {
       </div>
 
       <div className="sticky bottom-0 border-t border-gold-500/10 bg-ink-950/70 backdrop-blur">
-        <div className="mx-auto w-full max-w-[980px] px-4 sm:px-6 py-4">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-4">
           <div className="rounded-2xl border border-gold-500/15 bg-ink-800/55 shadow-panel backdrop-blur-sm px-3 py-3">
             <div className="flex items-end gap-2">
               <button
@@ -306,6 +313,7 @@ const GoldAIAssistantPage: React.FC = () => {
             <span className="text-gray-300 font-semibold">Shift</span>+<span className="text-gray-300 font-semibold">Enter</span> for a new line.
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

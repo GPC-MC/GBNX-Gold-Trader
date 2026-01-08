@@ -84,7 +84,7 @@ const AIStudio: React.FC = () => {
             return isGoldAi ? (
               <Link
                 key={id}
-                to="/dashboard/ai-studio/gold-ai-assistant"
+                to="/gold-ai-assistant"
                 className="block rounded-2xl focus:outline-none focus:ring-2 focus:ring-gold-500/20"
               >
                 {card}
