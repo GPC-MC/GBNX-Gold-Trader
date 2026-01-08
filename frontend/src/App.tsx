@@ -8,6 +8,10 @@ import Market from './components/Market/Market';
 import Portfolio from './components/Portfolio/Portfolio';
 import AIStudio from './components/AIStudio/AIStudio';
 import GoldAIAssistantPage from './components/GoldAIAssistant/GoldAIAssistantPage';
+import MarketAnalystAgentPage from './components/MarketAnalystAgent/MarketAnalystAgentPage';
+import TechnicalAnalystAgentPage from './components/TechnicalAnalystAgent/TechnicalAnalystAgentPage';
+import RiskManagerAgentPage from './components/RiskManagerAgent/RiskManagerAgentPage';
+import KnowledgeBaseAgentPage from './components/KnowledgeBaseAgent/KnowledgeBaseAgentPage';
 import Profile from './components/Profile/Profile';
 import MarketNews from './components/News/MarketNews';
 import LandingPage from './components/Landing/LandingPage';
@@ -24,6 +28,38 @@ function App() {
             element={
               <ProtectedRoute>
                 <GoldAIAssistantPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/market-analyst-agent"
+            element={
+              <ProtectedRoute>
+                <MarketAnalystAgentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/technical-analyst-agent"
+            element={
+              <ProtectedRoute>
+                <TechnicalAnalystAgentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/risk-manager-agent"
+            element={
+              <ProtectedRoute>
+                <RiskManagerAgentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/knowledge-base-agent"
+            element={
+              <ProtectedRoute>
+                <KnowledgeBaseAgentPage />
               </ProtectedRoute>
             }
           />

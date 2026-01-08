@@ -56,8 +56,6 @@ const AIStudio: React.FC = () => {
       <div className="rounded-2xl border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {agents.map(({ id, icon: Icon, avatarFile, label, description }) => {
-            const isGoldAi = id === 'gold-ai-assistant';
-
             const card = (
               <div className="group p-6 rounded-2xl border border-gold-500/10 bg-ink-800/55 text-center transform-gpu transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-gold-500/25 hover:bg-ink-800/65 hover:shadow-[0_12px_26px_rgba(0,0,0,0.35)]">
                 <div className="relative mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full border border-gold-500/20 bg-ink-900/40 shadow-none transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out group-hover:scale-105 group-hover:border-gold-500/35 group-hover:bg-ink-900/30 group-hover:shadow-glow">
@@ -73,24 +71,20 @@ const AIStudio: React.FC = () => {
                 </div>
                 <h3 className="font-semibold text-base text-white">{label}</h3>
                 <p className="mt-2 text-sm text-gray-400">{description}</p>
-                {isGoldAi && (
-                  <div className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-gold-300">
-                    Open <ChevronRight size={16} />
-                  </div>
-                )}
+                <div className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-gold-300">
+                  Open <ChevronRight size={16} />
+                </div>
               </div>
             );
 
-            return isGoldAi ? (
+            return (
               <Link
                 key={id}
-                to="/gold-ai-assistant"
+                to={`/${id}`}
                 className="block rounded-2xl focus:outline-none focus:ring-2 focus:ring-gold-500/20"
               >
                 {card}
               </Link>
-            ) : (
-              <div key={id}>{card}</div>
             );
           })}
         </div>
@@ -108,7 +102,7 @@ type AgentId =
 
 type AgentCard = {
   id: AgentId;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ElementType;
   avatarFile: string;
   label: string;
   description: string;

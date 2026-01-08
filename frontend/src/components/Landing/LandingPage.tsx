@@ -41,15 +41,8 @@ const LandingPage: React.FC = () => {
   const year = new Date().getFullYear();
 
   return (
-    <div className="min-h-screen bg-[#05060A] text-white">
+    <div className="min-h-screen text-white">
       <div className="relative overflow-hidden">
-        {/* Ambient background */}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-44 left-1/2 h-[520px] w-[920px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(212,175,55,0.22),_transparent_62%)] blur-3xl" />
-          <div className="absolute -bottom-64 right-[-220px] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,_rgba(242,210,124,0.12),_transparent_62%)] blur-3xl" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(5,6,10,0.0),rgba(5,6,10,0.92))]" />
-        </div>
-
         {/* Hero */}
         <section className="relative">
           <div className="mx-auto max-w-7xl px-6 pt-16 pb-20 sm:pt-20 sm:pb-24 lg:pt-28 lg:pb-32">
@@ -267,4 +260,3 @@ const LandingPage: React.FC = () => {
 };
 
 export default LandingPage;
-

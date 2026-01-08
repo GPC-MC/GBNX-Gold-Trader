@@ -72,7 +72,7 @@ const LoginPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-yellow-400 text-xl">Loading...</div>
       </div>
     );
@@ -106,7 +106,7 @@ const LoginPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen text-white">
       <div className="flex min-h-screen">
         {/* Left Panel - Branding */}
         <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 p-12 flex-col justify-center">
@@ -148,7 +148,7 @@ const LoginPage: React.FC = () => {
               <p className="text-gray-400">Sign in to access your trading dashboard</p>
             </div>
 
-            <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
+            <div className="bg-gray-800/90 rounded-2xl p-8 border border-gray-700/80 backdrop-blur-sm">
               <button
                 onClick={handleGoogleLogin}
                 className="w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-4 px-6 rounded-xl transition-all duration-200 hover:scale-105 flex items-center justify-center space-x-3 shadow-lg"

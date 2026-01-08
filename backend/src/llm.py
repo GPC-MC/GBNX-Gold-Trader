@@ -356,6 +356,10 @@ class FallbackLLM(Runnable):
 
     def _create_llm(self, model: str) -> Optional[ChatOpenAI]:
         """Create a ChatOpenAI instance pointing to LiteLLM proxy for the given model."""
+        print("Creating LLM")
+        print("base_url: " + self.base_url)
+        print("api_key: " + self.api_key)
+        
         try:
             params = {
                 "model": model,
@@ -804,23 +808,29 @@ if __name__ == "__main__":
 
 
 
-    from langchain_core.tools import tool
 
-    @tool
-    def get_weather(location: str) -> str:
-        """Get weather for a location."""
-        return f"Weather in {location}: Sunny, 72°F"
+    model = FallbackLLM(openai_model="gemini-2.5-flash", priority="openai")
+    response = model.invoke("Say hello in one sentence.")
+    print(response.content)
 
-    llm = FallbackLLM(gemini_model="gemini-2.5-flash", openai_model="skip", priority="gemini")
-    llm_with_tools = llm.bind_tools([get_weather])
-    response = llm_with_tools.invoke("What's the weather in Tokyo?")
-    print(response.tool_calls)  # [ToolCall(name='get_weather', args={'location': 'Tokyo'}, ...)]
-    print("\n🚀 Starting LLM Tests\n")
-    test_gemini()
-    test_streaming()
-    print("\n" + "=" * 50)
-    print("All tests completed!")
-    print("=" * 50)
+
+    # from langchain_core.tools import tool
+
+    # @tool
+    # def get_weather(location: str) -> str:
+    #     """Get weather for a location."""
+    #     return f"Weather in {location}: Sunny, 72°F"
+
+    # llm = FallbackLLM(gemini_model="gemini-2.5-flash", openai_model="skip", priority="gemini")
+    # llm_with_tools = llm.bind_tools([get_weather])
+    # response = llm_with_tools.invoke("What's the weather in Tokyo?")
+    # print(response.tool_calls)  # [ToolCall(name='get_weather', args={'location': 'Tokyo'}, ...)]
+    # print("\n🚀 Starting LLM Tests\n")
+    # test_gemini()
+    # test_streaming()
+    # print("\n" + "=" * 50)
+    # print("All tests completed!")
+    # print("=" * 50)
 
 
 

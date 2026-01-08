@@ -1,7 +1,19 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 import ReactMarkdown from 'react-markdown';
-import { ArrowLeft, Paperclip, Send } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Paperclip, 
+  Send, 
+  Plus, 
+  MessageSquare, 
+  PanelRightClose, 
+  PanelRightOpen,
+  FileText,
+  Code,
+  ChevronLeft,
+  Menu
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ChatMessage } from '../../types';
 
@@ -17,6 +29,9 @@ const GoldAIAssistantPage: React.FC = () => {
   ]);
   const [draft, setDraft] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -121,156 +136,203 @@ const GoldAIAssistantPage: React.FC = () => {
     }
   };
 
-  return (
-    <div className="relative min-h-screen bg-ink-950 text-white">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-44 left-1/2 h-[560px] w-[980px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(212,175,55,0.20),_transparent_62%)] blur-3xl" />
-        <div className="absolute -bottom-64 right-[-220px] h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,_rgba(242,210,124,0.10),_transparent_62%)] blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(5,6,10,0.0),rgba(5,6,10,0.92))]" />
-      </div>
+  const handleNewChat = () => {
+    setMessages([
+      {
+        id: 'welcome',
+        type: 'ai',
+        message: "Hi — I’m GoldAI Assistant. Ask me about gold price action, risk management, macro drivers, or market news.",
+        timestamp: new Date()
+      }
+    ]);
+    setDraft('');
+  };
 
-      <div className="relative min-h-screen flex flex-col">
-        <div className="sticky top-0 z-40 border-b border-gold-500/10 bg-ink-950/65 backdrop-blur">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-          <div className="h-14 flex items-center gap-3">
-            <Link
-              to="/dashboard/ai-studio"
-              className="inline-flex items-center gap-2 rounded-xl border border-gold-500/10 bg-ink-800/55 px-3 py-2 text-sm font-semibold text-gray-200 hover:bg-ink-800/75 hover:border-gold-500/20 transition-all duration-200"
-            >
-              <ArrowLeft size={16} className="text-gold-300" />
-              Back to AI Studio
-            </Link>
-            <div className="flex-1 text-center">
-              <div className="text-[15px] font-semibold text-white">GoldAI Assistant</div>
+  return (
+    <div className="flex h-screen bg-ink-950 text-white overflow-hidden">
+      {/* Left Sidebar */}
+      <div 
+        className={clsx(
+          "flex-shrink-0 bg-ink-900 border-r border-white/5 transition-all duration-300 flex flex-col",
+          isLeftSidebarOpen ? "w-[260px]" : "w-0 overflow-hidden"
+        )}
+      >
+        <div className="p-3 flex-shrink-0">
+          <Link
+            to="/dashboard/ai-studio"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg mb-2 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            <span>Back to Studio</span>
+          </Link>
+          
+          <button 
+            onClick={handleNewChat}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-colors text-left"
+          >
+            <Plus size={16} />
+            <span>New chat</span>
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-3 py-2">
+          <div className="text-xs font-semibold text-gray-500 mb-2 px-2">Today</div>
+          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors text-left truncate">
+            <span className="truncate">Gold price analysis</span>
+          </button>
+          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors text-left truncate">
+            <span className="truncate">Risk management strategy</span>
+          </button>
+          
+          <div className="text-xs font-semibold text-gray-500 mt-4 mb-2 px-2">Previous 7 Days</div>
+          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors text-left truncate">
+            <span className="truncate">Macro drivers update</span>
+          </button>
+        </div>
+
+        <div className="p-3 border-t border-white/5">
+          <div className="flex items-center gap-3 px-2 py-2">
+            <div className="w-8 h-8 rounded-full bg-gold-500/20 flex items-center justify-center text-gold-300 text-xs font-bold border border-gold-500/20">
+              JD
             </div>
-            <div className="w-[160px]" />
+            <div className="text-sm font-medium text-gray-200">John Doe</div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {messages.map(message => {
-          const isUser = message.type === 'user';
-          return (
-            <div
-              key={message.id}
-              className={clsx(
-                'w-full border-b border-white/5',
-                isUser ? 'bg-transparent' : 'bg-ink-900/30'
-              )}
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {/* Header */}
+        <div className="h-14 flex items-center justify-between px-4 border-b border-white/5 bg-ink-950/50 backdrop-blur z-10">
+          <div className="flex items-center gap-2">
+            {!isLeftSidebarOpen && (
+              <button 
+                onClick={() => setIsLeftSidebarOpen(true)}
+                className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg"
+              >
+                <Menu size={20} />
+              </button>
+            )}
+            <div className="font-semibold text-gray-200">GoldAI Assistant</div>
+            <span className="px-2 py-0.5 rounded text-xs bg-gold-500/10 text-gold-300 border border-gold-500/20">Beta</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+              className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg"
+              title={isRightSidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
-              <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-7">
-                <div className="flex gap-4">
-                  <div
-                    className={clsx(
-                      'mt-0.5 h-9 w-9 shrink-0 rounded-xl border flex items-center justify-center text-xs font-semibold',
-                      isUser
-                        ? 'border-gold-500/20 bg-gold-500/10 text-gold-200'
-                        : 'border-gold-500/15 bg-ink-800/55 text-gold-300'
-                    )}
-                    aria-hidden="true"
-                  >
-                    {isUser ? 'YOU' : 'AI'}
-                  </div>
+              {isRightSidebarOpen ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
+            </button>
+          </div>
+        </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm font-semibold text-gray-100">{isUser ? 'You' : 'GoldAI'}</div>
-                      <div className="text-xs text-gray-500">
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto w-full pb-32 pt-4">
+            {messages.map((message, idx) => {
+              const isUser = message.type === 'user';
+              return (
+                <div
+                  key={message.id}
+                  className={clsx(
+                    'w-full px-4 py-6',
+                    // isUser ? 'bg-transparent' : 'bg-transparent' // Keep consistent background for cleaner look
+                  )}
+                >
+                  <div className="flex gap-4 max-w-3xl mx-auto">
+                    <div
+                      className={clsx(
+                        'mt-0.5 h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold border',
+                        isUser
+                          ? 'bg-ink-800 border-white/10 text-gray-300'
+                          : 'bg-gold-500/10 border-gold-500/20 text-gold-300'
+                      )}
+                    >
+                      {isUser ? 'You' : 'AI'}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-sm text-gray-200 mb-1">
+                        {isUser ? 'You' : 'GoldAI'}
+                      </div>
+                      <div className="prose prose-invert prose-sm max-w-none text-gray-300 leading-7">
+                        <ReactMarkdown
+                          components={{
+                            h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-lg font-semibold mb-3 text-white">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-base font-semibold mb-2 text-white">{children}</h3>,
+                            p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+                            li: ({ children }) => <li>{children}</li>,
+                            code: ({ children, className }) => {
+                              const isInline = !className;
+                              return isInline ? (
+                                <code className="px-1 py-0.5 rounded bg-ink-900 border border-white/10 text-gold-200 text-[13px] font-mono">
+                                  {children}
+                                </code>
+                              ) : (
+                                <code className="block p-3 rounded bg-ink-900 border border-white/10 text-gold-200 text-[13px] font-mono whitespace-pre-wrap overflow-x-auto">
+                                  {children}
+                                </code>
+                              );
+                            },
+                            pre: ({ children }) => (
+                              <pre className="p-0 rounded mb-3 overflow-x-auto bg-transparent">
+                                {children}
+                              </pre>
+                            ),
+                            a: ({ children, href }) => (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-gold-300 hover:text-gold-400 underline underline-offset-2"
+                              >
+                                {children}
+                              </a>
+                            )
+                          }}
+                        >
+                          {message.message}
+                        </ReactMarkdown>
                       </div>
                     </div>
+                  </div>
+                </div>
+              );
+            })}
 
-                    <div className="mt-2 text-[16px] leading-7 text-gray-100">
-                      <ReactMarkdown
-                        components={{
-                          h1: ({ children }) => <h1 className="text-xl font-bold mb-3 text-white">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-lg font-semibold mb-3 text-white">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-base font-semibold mb-2 text-white">{children}</h3>,
-                          p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
-                          ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-                          ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
-                          li: ({ children }) => <li>{children}</li>,
-                          code: ({ children, className }) => {
-                            const isInline = !className;
-                            return isInline ? (
-                              <code className="px-1 py-0.5 rounded bg-ink-900/60 border border-gold-500/10 text-gold-200 text-[13px] font-mono">
-                                {children}
-                              </code>
-                            ) : (
-                              <code className="block p-3 rounded bg-ink-900/60 border border-gold-500/10 text-gold-200 text-[13px] font-mono whitespace-pre-wrap">
-                                {children}
-                              </code>
-                            );
-                          },
-                          pre: ({ children }) => (
-                            <pre className="p-3 rounded mb-3 overflow-x-auto bg-ink-900/60 border border-gold-500/10">
-                              {children}
-                            </pre>
-                          ),
-                          a: ({ children, href }) => (
-                            <a
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-gold-300 hover:text-gold-500 underline underline-offset-2"
-                            >
-                              {children}
-                            </a>
-                          )
-                        }}
-                      >
-                        {message.message}
-                      </ReactMarkdown>
+            {isTyping && (
+              <div className="w-full px-4 py-6">
+                <div className="flex gap-4 max-w-3xl mx-auto">
+                  <div className="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-xs font-semibold text-gold-300">
+                    AI
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-sm text-gray-200 mb-1">GoldAI</div>
+                    <div className="flex items-center gap-1 h-6">
+                      <div className="h-1.5 w-1.5 rounded-full bg-gold-500 animate-bounce" />
+                      <div className="h-1.5 w-1.5 rounded-full bg-gold-500 animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="h-1.5 w-1.5 rounded-full bg-gold-500 animate-bounce" style={{ animationDelay: '0.2s' }} />
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-
-        {isTyping && (
-          <div className="w-full border-b border-white/5 bg-ink-900/30">
-            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-7">
-              <div className="flex gap-4">
-                <div className="mt-0.5 h-9 w-9 shrink-0 rounded-xl border border-gold-500/15 bg-ink-800/55 flex items-center justify-center text-xs font-semibold text-gold-300">
-                  AI
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-gray-100">GoldAI</div>
-                  <div className="mt-3 flex items-center gap-2 text-gray-300">
-                    <div className="flex gap-1">
-                      <div className="h-2 w-2 rounded-full bg-gold-500 animate-bounce" />
-                      <div
-                        className="h-2 w-2 rounded-full bg-gold-500 animate-bounce"
-                        style={{ animationDelay: '0.1s' }}
-                      />
-                      <div
-                        className="h-2 w-2 rounded-full bg-gold-500 animate-bounce"
-                        style={{ animationDelay: '0.2s' }}
-                      />
-                    </div>
-                    <span className="text-sm">Thinking…</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        )}
+        </div>
 
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="sticky bottom-0 border-t border-gold-500/10 bg-ink-950/70 backdrop-blur">
-        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 py-4">
-          <div className="rounded-2xl border border-gold-500/15 bg-ink-800/55 shadow-panel backdrop-blur-sm px-3 py-3">
-            <div className="flex items-end gap-2">
+        {/* Input Area */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-ink-950 via-ink-950 to-transparent pt-10 pb-6 px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="relative flex items-end gap-2 bg-ink-800/80 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-lg focus-within:border-gold-500/30 focus-within:ring-1 focus-within:ring-gold-500/30 transition-all">
               <button
                 type="button"
-                className="mb-1 p-2 rounded-xl text-gray-400 hover:text-gold-300 hover:bg-white/5 transition-colors duration-200"
-                title="Attach"
-                aria-label="Attach"
+                className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                title="Attach file"
               >
                 <Paperclip size={20} />
               </button>
@@ -286,8 +348,8 @@ const GoldAIAssistantPage: React.FC = () => {
                   }
                 }}
                 rows={1}
-                placeholder="Message GoldAI…"
-                className="flex-1 resize-none bg-transparent text-gray-100 placeholder-gray-500 outline-none px-2 py-2 text-[16px] leading-6"
+                placeholder="Message GoldAI..."
+                className="flex-1 max-h-[200px] bg-transparent text-gray-100 placeholder-gray-500 outline-none py-2 text-[15px] leading-6 resize-none"
               />
 
               <button
@@ -295,25 +357,50 @@ const GoldAIAssistantPage: React.FC = () => {
                 onClick={() => void send()}
                 disabled={!draft.trim() || isTyping}
                 className={clsx(
-                  'mb-1 inline-flex items-center justify-center rounded-xl p-2 transition-all duration-200',
+                  'p-2 rounded-xl transition-all duration-200',
                   draft.trim() && !isTyping
-                    ? 'bg-gradient-to-r from-gold-500 to-gold-300 text-ink-900 hover:brightness-105 shadow-glow'
-                    : 'bg-ink-800/40 text-gray-500 cursor-not-allowed'
+                    ? 'bg-gold-500 text-ink-950 hover:bg-gold-400'
+                    : 'bg-white/5 text-gray-500 cursor-not-allowed'
                 )}
-                title="Send"
-                aria-label="Send"
               >
-                <Send size={20} />
+                <Send size={18} />
               </button>
             </div>
-          </div>
-
-          <div className="mt-3 text-center text-xs text-gray-500">
-            Press <span className="text-gray-300 font-semibold">Enter</span> to send,{' '}
-            <span className="text-gray-300 font-semibold">Shift</span>+<span className="text-gray-300 font-semibold">Enter</span> for a new line.
+            <div className="text-center mt-2 text-xs text-gray-500">
+              GoldAI can make mistakes. Consider checking important information.
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Right Sidebar - Preview Panel */}
+      <div 
+        className={clsx(
+          "flex-shrink-0 bg-ink-900 border-l border-white/5 transition-all duration-300 flex flex-col",
+          isRightSidebarOpen ? "w-[300px]" : "w-0 overflow-hidden"
+        )}
+      >
+        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-200">Preview</h3>
+          <div className="flex gap-1">
+            <button className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded">
+              <Code size={16} />
+            </button>
+            <button className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded">
+              <FileText size={16} />
+            </button>
+          </div>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm text-center">
+            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
+              <FileText size={24} className="opacity-50" />
+            </div>
+            <p>No content to preview</p>
+            <p className="text-xs mt-1 opacity-60">Generated code or files will appear here</p>
+          </div>
+        </div>
       </div>
     </div>
   );

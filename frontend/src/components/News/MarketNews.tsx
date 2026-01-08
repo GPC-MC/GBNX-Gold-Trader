@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { Brain, Globe, RefreshCw, TrendingDown, TrendingUp } from 'lucide-react';
+import { Globe, RefreshCw, TrendingUp, Zap, Newspaper, AlertTriangle } from 'lucide-react';
 
 interface NewsArticle {
   title: string;
@@ -10,6 +10,7 @@ interface NewsArticle {
   sentiment?: 'positive' | 'negative' | 'neutral';
   ai_reasoning?: string;
   market_impact?: 'bullish' | 'bearish' | 'neutral';
+  impact_level?: 'high' | 'medium' | 'low'; // Tier 1, 2, 3
 }
 
 interface NewsResponse {
@@ -54,62 +55,80 @@ const MarketNews: React.FC = () => {
     } catch (err) {
       console.error('Error fetching news:', err);
       const mockNews: NewsArticle[] = [
+        // Tier 1: Hero News
         {
           title: 'Gold Eclipses $3,900 as Government Shutdown Begins',
           summary:
-            'Gold futures opened at a record $3,887.70 per ounce, up about 1.2% from the prior day, and later pushed above $3,900 amid heightened safe-haven demand triggered by the U.S. government shutdown.',
-          source_url:
-            'https://finance.yahoo.com/personal-finance/investing/article/gold-price-today-wednesday-october-1-gold-eclipses-3900-as-government-shutdown-begins-113229852.html',
+            'Gold futures opened at a record $3,887.70 per ounce and later pushed above $3,900 amid heightened safe-haven demand triggered by the U.S. government shutdown.',
+          source_url: 'https://finance.yahoo.com/gold-shutdown',
           source_name: 'finance.yahoo.com',
           sentiment: 'positive',
           ai_reasoning:
-            'Government shutdown creates economic uncertainty, historically driving investors toward safe-haven assets like gold. The 1.2% price increase and breaking $3,900 threshold indicates strong market momentum.',
-          market_impact: 'bullish'
+            'Government shutdown historically increases safe-haven demand → bullish bias likely to persist short-term.',
+          market_impact: 'bullish',
+          impact_level: 'high'
         },
+        // Tier 2: Directional Signals (Bullish)
         {
-          title: 'Gold hits record high as US government shuts down',
+          title: 'Gold hits record high as Rate Cut bets increase',
           summary:
-            'Spot gold reached a record high—peaking at around $3,898.18 per ounce—while U.S. December futures climbed to $3,914.50, fueled by safe-haven demand amid a U.S. government shutdown and heightened expectations of an interest rate cut by the Federal Reserve.',
-          source_url:
-            'https://www.reuters.com/world/india/gold-hits-record-high-us-shutdown-risks-rate-cut-bets-2025-10-01/',
+            'Spot gold reached a record high driven by heightened expectations of an interest rate cut by the Federal Reserve next month.',
+          source_url: 'https://www.reuters.com/gold-record-high',
           source_name: 'reuters.com',
           sentiment: 'positive',
           ai_reasoning:
-            'Multiple bullish catalysts: government shutdown uncertainty, Fed rate cut expectations, and record-breaking price levels. The combination suggests sustained upward pressure on gold prices.',
-          market_impact: 'bullish'
+            'Lower rates reduce opportunity cost of holding non-yielding bullion → gold typically rallies.',
+          market_impact: 'bullish',
+          impact_level: 'medium'
         },
+        // Tier 2: Directional Signals (Bearish)
         {
-          title: 'Central Banks Reduce Gold Reserves',
+          title: 'Central Banks Reduce Gold Reserves in Q4',
           summary:
-            'Major central banks have reduced their gold holdings by 2.3% in Q4, signaling increased confidence in traditional currency markets and reduced hedging against economic uncertainty.',
-          source_url: 'https://www.bloomberg.com/news/central-banks-gold',
+            'Major central banks have reduced their gold holdings by 2.3% in Q4, signaling increased confidence in traditional currency markets.',
+          source_url: 'https://www.bloomberg.com/central-banks-gold',
           source_name: 'bloomberg.com',
           sentiment: 'negative',
           ai_reasoning:
-            'Central bank selling indicates institutional confidence in fiat currencies and reduced need for safe-haven positioning. This could pressure gold prices as major buyers reduce demand.',
-          market_impact: 'bearish'
+            'Institutional selling pressure creates overhead resistence → short-term bearish correction possible.',
+          market_impact: 'bearish',
+          impact_level: 'medium'
         },
+        // Tier 2: Directional Signals (Bearish)
         {
-          title: 'Dollar Strengthens Against Major Currencies',
+          title: 'Dollar Strength Weighs on Precious Metals',
           summary:
-            'The U.S. dollar index rose 1.5% this week as economic data exceeded expectations, potentially pressuring gold prices which typically move inversely to the dollar.',
-          source_url: 'https://www.marketwatch.com/story/dollar-strength',
+            'The U.S. dollar index rose 1.5% this week as economic data exceeded expectations, putting pressure on gold prices.',
+          source_url: 'https://www.marketwatch.com/dollar-strength',
           source_name: 'marketwatch.com',
           sentiment: 'negative',
           ai_reasoning:
-            'Strong dollar makes gold more expensive for foreign buyers and reduces its appeal as an inflation hedge. The inverse correlation typically puts downward pressure on gold prices.',
-          market_impact: 'bearish'
+            'Stronger USD makes gold more expensive for foreign buyers → inverse correlation pressures price down.',
+          market_impact: 'bearish',
+          impact_level: 'medium'
         },
+        // Tier 3: Context
         {
           title: 'Mining Output Remains Stable Despite Geopolitical Tensions',
           summary:
-            'Global gold mining production maintained steady levels despite ongoing geopolitical tensions, with major producers reporting no significant disruptions to operations.',
+            'Global gold mining production maintained steady levels despite ongoing geopolitical tensions in key regions.',
           source_url: 'https://www.mining.com/gold-production',
           source_name: 'mining.com',
           sentiment: 'neutral',
           ai_reasoning:
-            'Stable production ensures adequate supply while geopolitical tensions support safe-haven demand. The mixed signals suggest a balanced outlook without strong directional bias.',
-          market_impact: 'neutral'
+            'Supply chain functionality remains intact → Neutral supply-side impact.',
+          market_impact: 'neutral',
+          impact_level: 'low'
+        },
+        {
+          title: 'Jewelry Demand in India Shows Slight Uptick',
+          summary: 'Physical demand in India increased by 2% ahead of festival season, providing some floor support.',
+          source_url: 'https://www.cnbc.com/gold-india',
+          source_name: 'cnbc.com',
+          sentiment: 'neutral',
+          ai_reasoning: 'Seasonal physical demand supports base prices but unlikely to drive major trend.',
+          market_impact: 'neutral',
+          impact_level: 'low'
         }
       ];
       setNews(mockNews);
@@ -123,190 +142,216 @@ const MarketNews: React.FC = () => {
     fetchNews(true);
   };
 
-  const sentimentClasses = (sentiment?: NewsArticle['sentiment']) => {
-    switch (sentiment) {
-      case 'positive':
-        return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20';
-      case 'negative':
-        return 'bg-rose-500/15 text-rose-300 border-rose-500/20';
-      case 'neutral':
-      default:
-        return 'bg-white/10 text-gray-300 border-white/10';
-    }
-  };
+  // Group news by tiers
+  // Tier 1: High impact
+  const tier1News = news.filter(n => n.impact_level === 'high');
 
-  const impactPill = (impact?: NewsArticle['market_impact']) => {
-    if (!impact) return null;
+  // Tier 2: Medium impact OR (Standard Bullish/Bearish that isn't High/Low)
+  const tier2News = news.filter(n =>
+    n.impact_level === 'medium' ||
+    (!n.impact_level && (n.market_impact === 'bullish' || n.market_impact === 'bearish'))
+  );
 
-    if (impact === 'bullish') {
-      return (
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1">
-          <TrendingUp size={14} className="text-emerald-300" />
-          <span className="text-xs font-semibold text-emerald-300">BULLISH</span>
+  // Tier 3: Low impact OR (Neutral that isn't High/Medium) OR (No market_impact defined)
+  const tier3News = news.filter(n =>
+    n.impact_level === 'low' ||
+    (!n.impact_level && (n.market_impact === 'neutral' || !n.market_impact))
+  );
+
+
+  const renderAIInsight = (text: string, isHero = false) => (
+    <div className={clsx(
+      "relative overflow-hidden rounded-xl border flex flex-col justify-center",
+      isHero
+        ? "bg-gold-500/20 border-gold-500/30 p-4"
+        : "bg-ink-900/60 border-gold-500/15 p-3 mt-auto"
+    )}>
+      {/* Background accent */}
+      {!isHero && <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-gold-400/5 blur-2xl rounded-full pointer-events-none" />}
+
+      <div className="flex items-center gap-2 mb-2">
+        <div className={clsx(
+          "p-1 rounded-md flex items-center justify-center",
+          isHero ? "bg-gold-400 text-ink-950" : "bg-gold-500/10 text-gold-400"
+        )}>
+          <Zap size={isHero ? 16 : 14} fill={isHero ? "currentColor" : "none"} />
         </div>
-      );
-    }
-
-    if (impact === 'bearish') {
-      return (
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-3 py-1">
-          <TrendingDown size={14} className="text-rose-300" />
-          <span className="text-xs font-semibold text-rose-300">BEARISH</span>
-        </div>
-      );
-    }
-
-    return (
-      <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1">
-        <span className="text-xs font-semibold text-gray-300">NEUTRAL</span>
+        <span className={clsx(
+          "font-bold tracking-wider",
+          isHero ? "text-gold-300 text-sm" : "text-gold-500/90 text-[10px] uppercase"
+        )}>
+          {isHero ? "AI SIGNAL REASONING" : "SIGNAL INSIGHT"}
+        </span>
       </div>
-    );
-  };
+      <p className={clsx(
+        "leading-relaxed font-medium",
+        isHero ? "text-gold-100/90 text-base" : "text-gray-300 text-xs"
+      )}>
+        {text}
+      </p>
+    </div>
+  );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
       {/* Header */}
-      <div className="rounded-2xl border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm p-6 mb-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl border border-gold-500/15 bg-ink-900/40 flex items-center justify-center">
-              <Globe size={20} className="text-gold-300/80" />
-            </div>
-            <div>
-              <div className="text-xs font-semibold tracking-[0.18em] text-gold-500">MARKET NEWS</div>
-              <h1 className="mt-1 text-2xl sm:text-3xl font-bold text-white">Market News</h1>
-              <p className="mt-1 text-sm text-gray-400">Latest gold market news and updates</p>
-            </div>
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-6">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl border border-gold-500/15 bg-gradient-to-br from-ink-800 to-ink-900 flex items-center justify-center shadow-lg shadow-black/20">
+            <Globe size={24} className="text-gold-300" />
           </div>
-
-          <button
-            onClick={handleRefreshNews}
-            disabled={refreshingNews}
-            className={clsx(
-              'inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition-all duration-200',
-              refreshingNews
-                ? 'bg-ink-900/40 border-gold-500/10 text-gray-500 cursor-not-allowed'
-                : 'bg-gold-500/10 border-gold-500/25 text-gold-300 hover:bg-gold-500/15 hover:border-gold-500/35'
-            )}
-          >
-            <RefreshCw size={18} className={refreshingNews ? 'animate-spin' : ''} />
-            <span>{refreshingNews ? 'Refreshing…' : 'Refresh'}</span>
-          </button>
+          <div>
+            <div className="text-xs font-bold tracking-[0.2em] text-gold-500 uppercase">Signal Board</div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Market News</h1>
+          </div>
         </div>
+
+        <button
+          onClick={handleRefreshNews}
+          disabled={refreshingNews}
+          className={clsx(
+            'inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-200',
+            refreshingNews
+              ? 'bg-ink-900/40 border-gold-500/10 text-gray-500 cursor-not-allowed'
+              : 'bg-gold-500/10 border-gold-500/20 text-gold-300 hover:bg-gold-500/15 hover:border-gold-500/30 hover:shadow-lg hover:shadow-gold-500/5'
+          )}
+        >
+          <RefreshCw size={16} className={refreshingNews ? 'animate-spin' : ''} />
+          <span>{refreshingNews ? 'Scanning Markets…' : 'Update Signals'}</span>
+        </button>
       </div>
 
-      {/* Feed */}
       {newsLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-2xl border border-gold-500/10 bg-ink-850/40 p-6 shadow-panel backdrop-blur-sm"
-            >
-              <div className="animate-pulse">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="h-6 w-14 rounded bg-ink-800/70" />
-                  <div className="h-6 w-20 rounded bg-ink-800/70" />
-                </div>
-                <div className="h-6 w-28 rounded-full bg-ink-800/70 mb-4" />
-                <div className="h-5 rounded bg-ink-800/70 mb-2" />
-                <div className="h-5 w-3/4 rounded bg-ink-800/70 mb-4" />
-                <div className="h-3 rounded bg-ink-800/70 mb-2" />
-                <div className="h-3 rounded bg-ink-800/70 mb-2" />
-                <div className="h-3 w-2/3 rounded bg-ink-800/70 mb-4" />
-                <div className="rounded-xl border border-gold-500/10 bg-ink-900/40 p-4">
-                  <div className="h-3 w-1/3 rounded bg-ink-800/70 mb-2" />
-                  <div className="h-3 rounded bg-ink-800/70 mb-1" />
-                  <div className="h-3 rounded bg-ink-800/70 mb-1" />
-                  <div className="h-3 w-3/4 rounded bg-ink-800/70" />
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mb-4"></div>
+          <div className="text-gold-500/50 animate-pulse">Analyzing Market Flows...</div>
         </div>
       ) : (
-        <div>
-          {news.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {news.map((article, index) => (
-                <div
-                  key={index}
-                  className="rounded-2xl border border-gold-500/12 bg-ink-850/55 shadow-panel backdrop-blur-sm p-6 flex flex-col transition-all duration-200 hover:border-gold-500/30"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="text-xs px-2 py-1 rounded font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/20">
-                        LIVE
+        <div className="space-y-12">
+
+          {/* TIER 1: MARKET MOVING (HERO NEWS) */}
+          {tier1News.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Market Moving</h2>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {tier1News.map((article, idx) => (
+                  <div key={idx} className="col-span-1 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-gold-500/30 bg-gradient-to-br from-ink-800/80 to-ink-900/80 backdrop-blur-md p-6 sm:p-8 shadow-2xl shadow-black/50 transition-all hover:border-gold-500/50">
+                    <div className="absolute top-0 right-0 p-6">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500 text-white px-3 py-1 text-xs font-bold shadow-lg shadow-rose-900/20">
+                        <AlertTriangle size={12} strokeWidth={3} />
+                        HIGH IMPACT
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-8">
+                      <div className="flex-1 space-y-4">
+                        <div className="inline-flex items-center gap-2 text-xs font-medium text-gold-500/80">
+                          <span>{article.source_name}</span>
+                          <span className="w-1 h-1 rounded-full bg-gray-600" />
+                          <span>Just now</span>
+                        </div>
+                        <a href={article.source_url} target="_blank" rel="noopener noreferrer" className="block group-hover:opacity-80 transition-opacity">
+                          <h3 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                            {article.title}
+                          </h3>
+                        </a>
+                        <p className="text-gray-300 text-lg leading-relaxed max-w-2xl">
+                          {article.summary}
+                        </p>
                       </div>
-                      {article.sentiment && (
-                        <div
-                          className={clsx(
-                            'text-xs px-2 py-1 rounded font-semibold border',
-                            sentimentClasses(article.sentiment)
-                          )}
-                        >
-                          {article.sentiment.toUpperCase()}
+
+                      {article.ai_reasoning && (
+                        <div className="w-full md:w-80 shrink-0 self-stretch flex">
+                          {renderAIInsight(article.ai_reasoning, true)}
                         </div>
                       )}
                     </div>
-                    <span className="text-xs text-gray-500">{article.source_name}</span>
                   </div>
+                ))}
+              </div>
+            </section>
+          )}
 
-                  {article.market_impact && <div className="mb-3">{impactPill(article.market_impact)}</div>}
+          {/* TIER 2: DIRECTIONAL SIGNALS */}
+          {tier2News.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp size={16} className="text-gray-400" />
+                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Directional Signals</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {tier2News.map((article, idx) => {
+                  const isBullish = article.market_impact === 'bullish';
+                  const BorderColorClass = isBullish ? 'border-emerald-500/20 hover:border-emerald-500/40' : 'border-rose-500/20 hover:border-rose-500/40';
+                  const BgColorClass = isBullish ? 'bg-gradient-to-b from-emerald-950/10 to-ink-800/40' : 'bg-gradient-to-b from-rose-950/10 to-ink-800/40';
 
-                  <a
-                    href={article.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
-                    <h3 className="text-lg font-semibold mb-3 text-gray-100 transition-colors duration-200 line-clamp-2 hover:text-gold-300">
-                      {article.title}
-                    </h3>
-                    <p className="text-sm line-clamp-3 leading-relaxed mb-3 text-gray-400">
-                      {article.summary}
-                    </p>
-                  </a>
-
-                  {article.ai_reasoning && (
-                    <div className="mt-auto">
-                      <div className="rounded-xl border border-gold-500/12 bg-gold-500/5 p-3 mb-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Brain size={14} className="text-gold-500" />
-                          <span className="text-xs font-semibold tracking-[0.18em] text-gold-500">AI REASONING</span>
-                        </div>
-                        <p className="text-xs leading-relaxed text-gray-400">{article.ai_reasoning}</p>
+                  return (
+                    <div key={idx} className={clsx(
+                      "rounded-2xl border p-5 flex flex-col transition-all duration-300 group backdrop-blur-sm",
+                      BorderColorClass,
+                      BgColorClass
+                    )}>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className={clsx(
+                          "text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider",
+                          isBullish ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                        )}>
+                          {article.market_impact}
+                        </span>
+                        <span className="text-xs text-gray-500 font-medium">{article.source_name}</span>
                       </div>
-                    </div>
-                  )}
 
-                  <div className="pt-3 border-t border-gold-500/10">
-                    <a
-                      href={article.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-semibold text-gold-300 hover:text-gold-500 transition-colors duration-200"
-                    >
-                      Read Full Article →
+                      <a href={article.source_url} target="_blank" rel="noopener noreferrer" className="block mb-4">
+                        <h3 className="text-lg font-bold text-gray-100 mb-2 leading-snug group-hover:text-white transition-colors">
+                          {article.title}
+                        </h3>
+                        <p className="text-sm text-gray-400 line-clamp-2">
+                          {article.summary}
+                        </p>
+                      </a>
+
+                      {article.ai_reasoning && renderAIInsight(article.ai_reasoning)}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* TIER 3: CONTEXT & BACKGROUND */}
+          {tier3News.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <Newspaper size={16} className="text-gray-500" />
+                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Market Context</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {tier3News.map((article, idx) => (
+                  <div key={idx} className="rounded-xl border border-white/5 bg-ink-850/30 p-4 hover:bg-ink-850/50 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-600" />
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wide">{article.source_name}</span>
+                    </div>
+                    <a href={article.source_url} target="_blank" rel="noopener noreferrer">
+                      <h3 className="text-sm font-medium text-gray-300 hover:text-white transition-colors line-clamp-2 mb-1">
+                        {article.title}
+                      </h3>
                     </a>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <Globe size={56} className="mx-auto mb-4 text-gray-600" />
-              <h3 className="text-xl font-semibold text-gray-300 mb-2">No News Available</h3>
-              <p className="text-sm text-gray-500">Check back later for the latest market updates</p>
-            </div>
+                ))}
+              </div>
+            </section>
           )}
         </div>
       )}
 
       {!newsLoading && news.length > 0 && (
-        <div className="mt-8 text-center">
-          <p className="text-xs text-gray-500">
-            Showing {news.length} news articles • Last updated: {new Date().toLocaleTimeString()}
+        <div className="border-t border-white/5 pt-8 text-center">
+          <p className="text-xs text-gray-600">
+            Market data & signals generated by AI • Last updated: {new Date().toLocaleTimeString()}
           </p>
         </div>
       )}
