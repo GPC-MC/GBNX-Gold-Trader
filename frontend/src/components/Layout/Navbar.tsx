@@ -32,7 +32,7 @@ const Navbar: React.FC = () => {
             <div className="mr-8 text-[19px] font-semibold tracking-[0.02em] text-gold-500">
               Gold AI Platform
             </div>
-            <div className="hidden md:flex items-center space-x-1">
+            <div className="hidden md:flex items-center gap-x-6">
               {/* Primary Navigation */}
               {primaryNavItems.map(({ path, icon: Icon, label }) => (
                 <NavLink
@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
                   end={path === '/dashboard'}
                   className={({ isActive }) =>
                     clsx(
-                      'relative flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-[15px] font-medium leading-[1.25] tracking-[0.02em]',
+                      'relative flex items-center px-5 py-2 rounded-lg transition-all duration-200 text-[15px] font-medium leading-[1.25] tracking-[0.02em]',
                       isActive
                         ? 'text-gold-300 bg-gold-500/10 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-gold-500 after:shadow-[0_0_12px_rgba(212,175,55,0.8)]'
                         : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'
@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
               ))}
 
               {/* Divider */}
-              <div className="h-6 w-px mx-2 bg-white/10"></div>
+              <div className="h-6 w-px bg-white/10"></div>
 
               {/* Secondary Navigation */}
               {secondaryNavItems.map(({ path, icon: Icon, label }) => (
@@ -63,7 +63,7 @@ const Navbar: React.FC = () => {
                   to={path}
                   className={({ isActive }) =>
                     clsx(
-                      'relative flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-[15px] font-medium leading-[1.25] tracking-[0.02em]',
+                      'relative flex items-center px-5 py-2 rounded-lg transition-all duration-200 text-[15px] font-medium leading-[1.25] tracking-[0.02em]',
                       isActive
                         ? 'text-gold-300 bg-gold-500/10 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-gold-500 after:shadow-[0_0_12px_rgba(212,175,55,0.8)]'
                         : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'
