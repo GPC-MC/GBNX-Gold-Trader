@@ -55,15 +55,24 @@ const AIStudio: React.FC = () => {
 
       <div className="rounded-2xl border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {agents.map(({ id, icon: Icon, avatarFile, label, description }) => {
+          {agents.map(({ id, icon: Icon, avatarFile, label, description }, index) => {
+            const isHero = index === 0;
             const card = (
               <div className="group p-6 rounded-2xl border border-gold-500/10 bg-ink-800/55 text-center transform-gpu transition-[transform,background-color,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-gold-500/25 hover:bg-ink-800/65 hover:shadow-[0_12px_26px_rgba(0,0,0,0.35)]">
-                <div className="relative mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full border border-gold-500/20 bg-ink-900/40 shadow-none transition-[transform,box-shadow,border-color,background-color] duration-200 ease-out group-hover:scale-105 group-hover:border-gold-500/35 group-hover:bg-ink-900/30 group-hover:shadow-glow">
+                <div
+                  className={`
+                    relative mx-auto mb-4 h-20 w-20 overflow-hidden rounded-full 
+                    border-2 border-gold-500/20 bg-gradient-to-br from-gold-500/10 to-transparent p-1
+                    transition-[transform,box-shadow,border-color] duration-300 ease-out 
+                    group-hover:scale-105 group-hover:border-gold-500/40 
+                    ${isHero ? 'shadow-[0_0_25px_rgba(212,175,55,0.5)]' : 'shadow-none group-hover:shadow-glow'}
+                  `}
+                >
                   <img
                     src={`/avatars/${encodeURIComponent(avatarFile)}`}
                     alt={`${label} avatar`}
                     loading="lazy"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full rounded-full object-cover"
                   />
                   <div className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full border border-gold-500/25 bg-ink-900/80 backdrop-blur-sm transition-[border-color,transform] duration-200 ease-out group-hover:border-gold-500/45 group-hover:scale-105">
                     <Icon size={14} className="text-gold-300" aria-hidden="true" />

@@ -7,3 +7,4 @@ backend/.env
 backend/dulcet-order-476509-q4-3c7d878c95c2.json
 backend/dulcet-order-476509-q4-7b210ba5c8a4.json
 .claude/.settings.json
+.vercel

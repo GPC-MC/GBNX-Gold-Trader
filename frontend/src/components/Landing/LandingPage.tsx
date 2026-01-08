@@ -219,7 +219,7 @@ const LandingPage: React.FC = () => {
               <FeatureCard
                 icon={Shield}
                 title="Security-first"
-                description="Authentication-gated access keeps the dashboard experience protected by design."
+                description="Explore the dashboard in guest mode, with secure foundations ready when you enable authentication."
               />
               <FeatureCard
                 icon={BarChart3}
@@ -246,9 +246,6 @@ const LandingPage: React.FC = () => {
                 </a>
                 <Link className="transition hover:text-white" to="/dashboard">
                   Launch
-                </Link>
-                <Link className="transition hover:text-white" to="/login">
-                  Sign in
                 </Link>
               </div>
             </div>

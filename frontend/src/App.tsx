@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
-import LoginPage from './components/Auth/LoginPage';
 import DashboardLayout from './components/Layout/DashboardLayout';
 import Market from './components/Market/Market';
 import Portfolio from './components/Portfolio/Portfolio';
@@ -22,7 +21,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<Navigate to="/dashboard" replace />} />
           <Route
             path="/gold-ai-assistant"
             element={

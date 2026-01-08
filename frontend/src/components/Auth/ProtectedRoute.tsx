@@ -1,5 +1,4 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -7,7 +6,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -15,10 +14,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         <div className="text-gold-500 text-xl">Loading...</div>
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
