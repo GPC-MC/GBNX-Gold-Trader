@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
                   end={path === '/dashboard'}
                   className={({ isActive }) =>
                     clsx(
-                      'relative flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-[15px] font-medium tracking-[0.02em]',
+                      'relative flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-[15px] font-medium leading-[1.25] tracking-[0.02em]',
                       isActive
                         ? 'text-gold-300 bg-gold-500/10 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-gold-500 after:shadow-[0_0_12px_rgba(212,175,55,0.8)]'
                         : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'
@@ -63,7 +63,7 @@ const Navbar: React.FC = () => {
                   to={path}
                   className={({ isActive }) =>
                     clsx(
-                      'relative flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-[14px] font-normal',
+                      'relative flex items-center px-4 py-2 rounded-lg transition-all duration-200 text-[15px] font-medium leading-[1.25] tracking-[0.02em]',
                       isActive
                         ? 'text-gold-300 bg-gold-500/10 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-gold-500 after:shadow-[0_0_12px_rgba(212,175,55,0.8)]'
                         : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'

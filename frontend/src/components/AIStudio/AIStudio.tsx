@@ -52,20 +52,13 @@ const AIStudio: React.FC = () => {
           {agents.map(({ id, icon: Icon, label, description }) => (
             <div
               key={id}
-              className="p-5 rounded-2xl border border-gold-500/10 bg-ink-800/55 hover:border-gold-500/20 hover:bg-ink-800/65 transition-all duration-200"
+              className="p-6 rounded-2xl border border-gold-500/10 bg-ink-800/55 hover:border-gold-500/20 hover:bg-ink-800/65 transition-all duration-200 text-center"
             >
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-xl border bg-white/5 border-white/10">
-                  <Icon size={22} className="text-gray-300" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-semibold text-base text-white">{label}</h3>
-                    <span className="text-[11px] font-semibold tracking-[0.16em] text-gray-500">SOON</span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-400">{description}</p>
-                </div>
+              <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl border border-gold-500/20 bg-gold-500/10 shadow-glow">
+                <Icon size={30} className="text-gold-200" />
               </div>
+              <h3 className="font-semibold text-base text-white">{label}</h3>
+              <p className="mt-2 text-sm text-gray-400">{description}</p>
             </div>
           ))}
         </div>
