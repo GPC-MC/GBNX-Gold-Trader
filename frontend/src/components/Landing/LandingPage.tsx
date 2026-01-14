@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, Bot, Shield, TrendingUp, Zap } from 'lucide-react';
+import { Activity, ArrowDownRight, ArrowUpRight, BarChart3, Bot, Shield, TrendingUp, Zap } from 'lucide-react';
 import avatarImage from '../../../assets/avatar.png';
 import LoginModal from '../Auth/LoginModal';
 
@@ -68,6 +68,9 @@ const LandingPage: React.FC = () => {
                 <h1 className="text-4xl font-bold leading-[1.05] text-white sm:text-5xl lg:text-6xl">
                   AI-powered gold intelligence for confident portfolio decisions.
                 </h1>
+                <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-[#F2D27C]/80">
+                  Built for long-term gold investors, traders, and wealth managers.
+                </p>
                 <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-300">
                   Track gold assets, analyze performance, and let AI surface real-time insights—built
                   for clarity, control, and stability.
@@ -107,6 +110,79 @@ const LandingPage: React.FC = () => {
               <div className="order-1 flex justify-center lg:order-2">
                 <div className="relative">
                   <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle,_rgba(212,175,55,0.24),_transparent_62%)] blur-2xl" />
+                  <div
+                    className="pointer-events-none absolute -inset-6 rounded-full border border-[#D4AF37]/15 border-dashed opacity-70 animate-spin"
+                    style={{ animationDuration: '32s' }}
+                  />
+                  <div
+                    className="pointer-events-none absolute -inset-10 rounded-full bg-[radial-gradient(circle,_rgba(242,210,124,0.12),_transparent_68%)] opacity-70 animate-pulse"
+                    style={{ animationDuration: '7s' }}
+                  />
+
+                  <div className="pointer-events-none absolute -left-10 top-10 hidden w-44 flex-col gap-3 rounded-2xl border border-[#D4AF37]/20 bg-[#0B1220]/85 p-3 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:flex">
+                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F2D27C]/70">
+                      <span>XAU 24h</span>
+                      <span className="text-emerald-300/90">+1.4%</span>
+                    </div>
+                    <svg viewBox="0 0 120 40" className="h-8 w-full">
+                      <defs>
+                        <linearGradient id="goldPulse" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#F2D27C" stopOpacity="0.05" />
+                          <stop offset="100%" stopColor="#F2D27C" stopOpacity="0.35" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M2 30 C18 28 30 18 44 20 C58 22 70 14 86 12 C102 10 110 18 118 6"
+                        fill="none"
+                        stroke="#F2D27C"
+                        strokeWidth="2"
+                      />
+                      <path
+                        d="M2 30 C18 28 30 18 44 20 C58 22 70 14 86 12 C102 10 110 18 118 6 L118 40 L2 40 Z"
+                        fill="url(#goldPulse)"
+                      />
+                    </svg>
+                    <div className="flex items-center justify-between text-[11px] text-gray-400">
+                      <span>Spot</span>
+                      <span className="text-gray-200">$2,347</span>
+                    </div>
+                  </div>
+
+                  <div className="pointer-events-none absolute -right-12 top-16 hidden w-44 flex-col gap-3 rounded-2xl border border-[#D4AF37]/20 bg-[#0B1220]/85 p-3 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:flex">
+                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F2D27C]/70">
+                      <span>Signal flow</span>
+                      <span className="flex items-center gap-2 text-[10px] text-emerald-300/90">
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70 opacity-70" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400/90" />
+                        </span>
+                        Live
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-gray-200">
+                      <ArrowUpRight size={14} className="text-emerald-300" />
+                      Buy pressure +0.8
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                      <ArrowDownRight size={14} className="text-rose-300" />
+                      Sell pressure -0.3
+                    </div>
+                  </div>
+
+                  <div className="pointer-events-none absolute -left-8 bottom-0 hidden w-40 flex-col gap-3 rounded-2xl border border-[#D4AF37]/20 bg-[#0B1220]/85 p-3 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:flex">
+                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F2D27C]/70">
+                      <span>Risk lens</span>
+                      <Activity size={14} className="text-[#F2D27C]/70" />
+                    </div>
+                    <div className="flex items-end gap-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400/80" />
+                      <span className="h-3 w-2 rounded-full bg-[#F2D27C]/70" />
+                      <span className="h-5 w-2 rounded-full bg-[#F2D27C]/50" />
+                      <span className="h-4 w-2 rounded-full bg-amber-300/60" />
+                      <span className="h-3 w-2 rounded-full bg-amber-200/50" />
+                    </div>
+                    <div className="text-[11px] text-gray-300">Volatility 2.6% · Stable</div>
+                  </div>
 
                   <div className="relative h-[320px] w-[320px] rounded-full bg-gradient-to-br from-[#D4AF37]/35 via-[#F2D27C]/10 to-transparent p-[1px] shadow-[0_0_90px_rgba(212,175,55,0.18)] sm:h-[360px] sm:w-[360px]">
                     <div className="relative flex h-full w-full items-center justify-center rounded-full bg-[#0B1220]">
