@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import DashboardLayout from './components/Layout/DashboardLayout';
+import DashboardHome from './components/Dashboard/DashboardHome';
 import Market from './components/Market/Market';
 import Portfolio from './components/Portfolio/Portfolio';
 import AIStudio from './components/AIStudio/AIStudio';
@@ -70,7 +71,7 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Portfolio />} />
+            <Route index element={<DashboardHome />} />
             <Route path="market" element={<Market />} />
             <Route path="news" element={<MarketNews />} />
             <Route path="portfolio" element={<Portfolio />} />
@@ -81,7 +82,7 @@ function App() {
           {/* Backwards-compatible redirects */}
           <Route path="/market" element={<Navigate to="/dashboard/market" replace />} />
           <Route path="/news" element={<Navigate to="/dashboard/news" replace />} />
-          <Route path="/portfolio" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/portfolio" element={<Navigate to="/dashboard/portfolio" replace />} />
           <Route path="/ai-studio" element={<Navigate to="/dashboard/ai-studio" replace />} />
           <Route path="/dashboard/ai-studio/gold-ai-assistant" element={<Navigate to="/gold-ai-assistant" replace />} />
           <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />

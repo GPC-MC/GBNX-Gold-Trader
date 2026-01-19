@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   TrendingUp,
   Briefcase,
+  LayoutGrid,
   Bot,
   User,
   LogOut,
@@ -15,7 +16,8 @@ const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
 
   const primaryNavItems = [
-    { path: '/dashboard', icon: Briefcase, label: 'Portfolio' },
+    { path: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
+    { path: '/dashboard/portfolio', icon: Briefcase, label: 'Portfolio' },
     { path: '/dashboard/market', icon: TrendingUp, label: 'Market' }
   ];
 
