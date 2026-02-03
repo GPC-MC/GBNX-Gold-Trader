@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, BarChart3, BookOpen, Bot, ChevronRight, ShieldAlert } from 'lucide-react';
+import { Activity, BarChart3, BookOpen, Bot, ChevronRight, ShieldAlert, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AIStudio: React.FC = () => {
@@ -38,6 +38,13 @@ const AIStudio: React.FC = () => {
       avatarFile: 'uifaces-abstract-avatar (5).jpg',
       label: 'Knowledge Base Agent',
       description: 'Search and summarize your docs'
+    },
+    {
+      id: 'sentiment-analysis-agent',
+      icon: TrendingUp,
+      avatarFile: 'uifaces-abstract-avatar (6).jpg',
+      label: 'Sentiment Analysis Agent',
+      description: 'Analyze market sentiment from text'
     }
   ];
 
@@ -107,7 +114,8 @@ type AgentId =
   | 'market-analyst-agent'
   | 'technical-analyst-agent'
   | 'risk-manager-agent'
-  | 'knowledge-base-agent';
+  | 'knowledge-base-agent'
+  | 'sentiment-analysis-agent';
 
 type AgentCard = {
   id: AgentId;

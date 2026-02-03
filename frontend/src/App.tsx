@@ -12,6 +12,7 @@ import MarketAnalystAgentPage from './components/MarketAnalystAgent/MarketAnalys
 import TechnicalAnalystAgentPage from './components/TechnicalAnalystAgent/TechnicalAnalystAgentPage';
 import RiskManagerAgentPage from './components/RiskManagerAgent/RiskManagerAgentPage';
 import KnowledgeBaseAgentPage from './components/KnowledgeBaseAgent/KnowledgeBaseAgentPage';
+import SentimentAnalysisAgentPage from './components/SentimentAnalysisAgent/SentimentAnalysisAgentPage';
 import Profile from './components/Profile/Profile';
 import MarketNews from './components/News/MarketNews';
 import LandingPage from './components/Landing/LandingPage';
@@ -60,6 +61,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <KnowledgeBaseAgentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sentiment-analysis-agent"
+            element={
+              <ProtectedRoute>
+                <SentimentAnalysisAgentPage />
               </ProtectedRoute>
             }
           />

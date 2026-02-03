@@ -7,10 +7,13 @@ import {
   LayoutGrid,
   Newspaper,
   Sparkles,
-  TrendingUp
+  TrendingUp,
+  X,
+  Settings
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useGoldData } from '../../hooks/useGoldData';
+import { useAuth } from '../../contexts/AuthContext';
 import type { GoldPrice, Portfolio } from '../../types';
 
 type WidgetId = 'price' | 'news' | 'assistant' | 'portfolio' | 'actions';
@@ -32,8 +35,16 @@ interface NewsArticle {
 
 const MAX_WIDGETS = 4;
 const STORAGE_KEY = 'gbnx.dashboard.widgets';
+const MODAL_SHOWN_KEY = 'gbnx.dashboard.widgets.modalShown';
 
 const DEFAULT_WIDGETS: WidgetId[] = ['price', 'news', 'assistant', 'portfolio'];
+
+const buildUserStorageKey = (baseKey: string, userId?: string | null) => {
+  if (!userId) {
+    return baseKey;
+  }
+  return `${baseKey}.${userId}`;
+};
 
 const WIDGET_OPTIONS: WidgetOption[] = [
   {
@@ -381,15 +392,213 @@ const QuickActionsWidget: React.FC = () => (
   </WidgetCard>
 );
 
+interface WidgetLibraryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSkip: () => void;
+  selectedWidgets: WidgetId[];
+  onToggleWidget: (id: WidgetId) => void;
+  isLimitReached: boolean;
+}
+
+const WidgetLibraryModal: React.FC<WidgetLibraryModalProps> = ({
+  isOpen,
+  onClose,
+  onSkip,
+  selectedWidgets,
+  onToggleWidget,
+  isLimitReached
+}) => {
+  if (!isOpen) return null;
+
+  const canProceed = selectedWidgets.length > 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+      <div className="relative w-full max-w-4xl max-h-[95vh] overflow-hidden rounded-3xl border border-gold-500/30 bg-gradient-to-b from-ink-900 to-ink-950 shadow-[0_20px_80px_rgba(0,0,0,0.8)]">
+        {/* Header */}
+        <div className="relative border-b border-gold-500/15 bg-gradient-to-r from-gold-500/5 to-transparent px-8 py-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/20 bg-gold-500/10 px-3 py-1 mb-3">
+                <Sparkles size={14} className="text-gold-400" />
+                <span className="text-xs font-semibold tracking-[0.15em] text-gold-400">FIRST TIME SETUP</span>
+              </div>
+              <h2 className="text-3xl font-bold text-white">Welcome to Your Trading Dashboard</h2>
+              <p className="mt-2 text-base text-gray-300">
+                Customize your experience by selecting the widgets you'd like to see.
+              </p>
+              <p className="mt-1 text-sm text-gray-400">
+                Choose up to {MAX_WIDGETS} widgets. You can always change this later.
+              </p>
+            </div>
+            <button
+              onClick={onSkip}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold-500/20 bg-ink-850/60 text-gray-400 hover:text-white hover:border-gold-500/40 hover:bg-ink-800 transition-all"
+              aria-label="Skip setup"
+              title="Skip setup (use defaults)"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Progress indicator */}
+        <div className="px-8 py-4 border-b border-gold-500/10 bg-ink-900/40">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-white">Widget Selection</span>
+            <span className={clsx(
+              "text-sm font-semibold",
+              selectedWidgets.length === 0 ? "text-gray-400" :
+              selectedWidgets.length < MAX_WIDGETS ? "text-gold-300" :
+              "text-emerald-400"
+            )}>
+              {selectedWidgets.length}/{MAX_WIDGETS} selected
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-ink-800 overflow-hidden">
+            <div
+              className={clsx(
+                "h-full transition-all duration-500 rounded-full",
+                selectedWidgets.length === 0 ? "bg-gray-600" :
+                selectedWidgets.length < MAX_WIDGETS ? "bg-gradient-to-r from-gold-600 to-gold-400" :
+                "bg-gradient-to-r from-emerald-600 to-emerald-400"
+              )}
+              style={{ width: `${(selectedWidgets.length / MAX_WIDGETS) * 100}%` }}
+            />
+          </div>
+          {isLimitReached && (
+            <div className="mt-3 flex items-center gap-2 rounded-xl border border-gold-500/30 bg-gold-500/10 px-4 py-2.5">
+              <div className="h-2 w-2 rounded-full bg-gold-400 animate-pulse" />
+              <span className="text-sm font-medium text-gold-200">
+                Maximum widgets selected. Remove one to add another.
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Widget Options */}
+        <div className="overflow-y-auto max-h-[50vh] p-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {WIDGET_OPTIONS.map(option => {
+              const isSelected = selectedWidgets.includes(option.id);
+              const isDisabled = !isSelected && isLimitReached;
+              const Icon = option.icon;
+
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => onToggleWidget(option.id)}
+                  disabled={isDisabled}
+                  className={clsx(
+                    'group relative flex items-center gap-4 rounded-2xl border p-5 text-left transition-all duration-300',
+                    isSelected
+                      ? 'border-gold-500/60 bg-gradient-to-br from-gold-500/20 to-gold-500/5 shadow-[0_0_40px_-10px_rgba(212,175,55,0.5)] scale-[1.02]'
+                      : 'border-gold-500/15 bg-ink-850/40 hover:border-gold-500/35 hover:bg-ink-850/70 hover:scale-[1.01]',
+                    isDisabled && 'cursor-not-allowed opacity-40 hover:scale-100'
+                  )}
+                >
+                  {/* Selection indicator */}
+                  <div className={clsx(
+                    "absolute top-3 right-3 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all",
+                    isSelected
+                      ? "border-gold-400 bg-gold-400"
+                      : "border-gray-600 bg-transparent"
+                  )}>
+                    {isSelected && (
+                      <svg className="h-4 w-4 text-ink-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+
+                  <div className={clsx(
+                    "flex h-14 w-14 items-center justify-center rounded-xl border transition-all",
+                    isSelected
+                      ? "border-gold-400/40 bg-gradient-to-br from-gold-500/20 to-gold-600/10"
+                      : "border-gold-500/20 bg-ink-900/60 group-hover:border-gold-500/30"
+                  )}>
+                    <Icon size={24} className={clsx(
+                      "transition-colors",
+                      isSelected ? "text-gold-300" : "text-gold-400/70 group-hover:text-gold-300"
+                    )} />
+                  </div>
+
+                  <div className="flex-1 min-w-0 pr-8">
+                    <div className="text-base font-semibold text-white mb-1">{option.title}</div>
+                    <div className="text-xs text-gray-400 leading-relaxed">{option.description}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="sticky bottom-0 border-t border-gold-500/15 bg-gradient-to-t from-ink-950 to-ink-900/95 backdrop-blur-sm px-8 py-5">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-gray-400">
+              {selectedWidgets.length === 0 ? (
+                <span className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                  Please select at least one widget to continue
+                </span>
+              ) : (
+                <span>Perfect! You've selected {selectedWidgets.length} widget{selectedWidgets.length !== 1 ? 's' : ''}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  // Reset to default widgets
+                  DEFAULT_WIDGETS.forEach(widgetId => {
+                    if (!selectedWidgets.includes(widgetId)) {
+                      onToggleWidget(widgetId);
+                    }
+                  });
+                  selectedWidgets.forEach(widgetId => {
+                    if (!DEFAULT_WIDGETS.includes(widgetId)) {
+                      onToggleWidget(widgetId);
+                    }
+                  });
+                }}
+                className="rounded-xl border border-gray-600 bg-ink-800/60 px-4 py-2.5 text-sm font-semibold text-gray-300 hover:border-gray-500 hover:bg-ink-800 hover:text-white transition-all"
+              >
+                Use Defaults
+              </button>
+              <button
+                onClick={onClose}
+                disabled={!canProceed}
+                className={clsx(
+                  "rounded-xl px-8 py-2.5 text-sm font-bold transition-all shadow-lg",
+                  canProceed
+                    ? "border border-gold-500/40 bg-gradient-to-r from-gold-600 to-gold-500 text-white hover:from-gold-500 hover:to-gold-400 hover:shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:scale-[1.02]"
+                    : "border border-gray-700 bg-gray-800 text-gray-500 cursor-not-allowed"
+                )}
+              >
+                {canProceed ? "Continue to Dashboard" : "Select Widgets"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const DashboardHome: React.FC = () => {
   const { goldPrice, portfolio } = useGoldData();
+  const { user } = useAuth();
+  const userId = user?.id;
+  const widgetStorageKey = buildUserStorageKey(STORAGE_KEY, userId);
+  const modalShownKey = buildUserStorageKey(MODAL_SHOWN_KEY, userId);
   const [selectedWidgets, setSelectedWidgets] = useState<WidgetId[]>(() => {
     if (typeof window === 'undefined') {
       return DEFAULT_WIDGETS;
     }
 
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(widgetStorageKey);
       if (stored) {
         return normalizeSelection(JSON.parse(stored));
       }
@@ -400,13 +609,55 @@ const DashboardHome: React.FC = () => {
     return DEFAULT_WIDGETS;
   });
 
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [showWidgetLibrary, setShowWidgetLibrary] = useState<boolean>(false);
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
+    if (!userId) {
+      return;
+    }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedWidgets));
-  }, [selectedWidgets]);
+    // Check if the modal has been shown before
+    const modalShown = localStorage.getItem(modalShownKey);
+    if (!modalShown) {
+      // Show the modal on first visit
+      setShowModal(true);
+    }
+  }, [modalShownKey, userId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (!userId) {
+      return;
+    }
+
+    localStorage.setItem(widgetStorageKey, JSON.stringify(selectedWidgets));
+  }, [selectedWidgets, userId, widgetStorageKey]);
+
+  const handleCloseModal = () => {
+    // Only close if at least one widget is selected
+    if (selectedWidgets.length > 0) {
+      setShowModal(false);
+      // Mark that the modal has been shown
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(modalShownKey, 'true');
+      }
+    }
+  };
+
+  const handleSkipModal = () => {
+    // Close and use default widgets
+    setShowModal(false);
+    // Mark that the modal has been shown
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(modalShownKey, 'true');
+    }
+  };
 
   const widgetMap = useMemo(
     () => ({
@@ -440,84 +691,104 @@ const DashboardHome: React.FC = () => {
   const widgetGridCols = selectedWidgets.length <= 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <>
+      <WidgetLibraryModal
+        isOpen={showModal}
+        onClose={handleCloseModal}
+        onSkip={handleSkipModal}
+        selectedWidgets={selectedWidgets}
+        onToggleWidget={handleToggleWidget}
+        isLimitReached={isLimitReached}
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-xs font-semibold tracking-[0.18em] text-gold-500">CUSTOM DASHBOARD</div>
           <h1 className="text-3xl sm:text-4xl font-semibold text-white">Welcome back</h1>
           <p className="mt-2 text-sm text-gray-400">
-            Choose up to {MAX_WIDGETS} widgets to customize your view.
+            {selectedWidgets.length} of {MAX_WIDGETS} widgets active
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="rounded-xl border border-gold-500/15 bg-ink-850/60 px-4 py-2 text-xs uppercase tracking-[0.2em] text-gold-500">
-            {selectedWidgets.length}/{MAX_WIDGETS} selected
-          </div>
           <button
-            onClick={handleReset}
-            className="rounded-xl border border-gold-500/20 bg-ink-900/50 px-4 py-2 text-xs font-semibold text-gray-200 hover:border-gold-500/30 hover:text-white"
+            onClick={() => setShowWidgetLibrary(!showWidgetLibrary)}
+            className={clsx(
+              "inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition",
+              showWidgetLibrary
+                ? "border-gold-500/40 bg-gold-500/20 text-gold-200"
+                : "border-gold-500/20 bg-ink-900/50 text-gray-200 hover:border-gold-500/30 hover:text-white"
+            )}
           >
-            Reset to default
+            <Settings size={16} />
+            {showWidgetLibrary ? 'Hide' : 'Customize'} Widgets
           </button>
         </div>
       </div>
 
-      <section className="rounded-2xl border border-gold-500/15 bg-ink-900/40 p-5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-sm font-semibold text-white">Widget library</div>
-            <div className="text-xs text-gray-400">Tap a tile to add or remove a widget.</div>
-          </div>
-          {isLimitReached && (
-            <div className="text-xs font-semibold text-gold-300">
-              Limit reached. Remove one to add another.
+      {showWidgetLibrary && (
+        <section className="rounded-2xl border border-gold-500/15 bg-ink-900/40 p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-sm font-semibold text-white">Widget library</div>
+              <div className="text-xs text-gray-400">Tap a tile to add or remove a widget.</div>
             </div>
-          )}
-        </div>
+            {isLimitReached && (
+              <div className="text-xs font-semibold text-gold-300">
+                Limit reached. Remove one to add another.
+              </div>
+            )}
+            <button
+              onClick={handleReset}
+              className="rounded-xl border border-gold-500/20 bg-ink-900/50 px-3 py-1.5 text-xs font-semibold text-gray-200 hover:border-gold-500/30 hover:text-white"
+            >
+              Reset to default
+            </button>
+          </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {WIDGET_OPTIONS.map(option => {
-            const isSelected = selectedWidgets.includes(option.id);
-            const isDisabled = !isSelected && isLimitReached;
-            const Icon = option.icon;
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {WIDGET_OPTIONS.map(option => {
+              const isSelected = selectedWidgets.includes(option.id);
+              const isDisabled = !isSelected && isLimitReached;
+              const Icon = option.icon;
 
-            return (
-              <button
-                key={option.id}
-                onClick={() => handleToggleWidget(option.id)}
-                disabled={isDisabled}
-                className={clsx(
-                  'flex items-center justify-between gap-3 rounded-xl border p-4 text-left transition',
-                  isSelected
-                    ? 'border-gold-500/40 bg-gold-500/10 shadow-[0_0_20px_-10px_rgba(212,175,55,0.5)]'
-                    : 'border-gold-500/10 bg-ink-900/40 hover:border-gold-500/30',
-                  isDisabled && 'cursor-not-allowed opacity-60'
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 flex h-9 w-9 items-center justify-center rounded-lg border border-gold-500/20 bg-ink-900/60 text-gold-300">
-                    <Icon size={16} />
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-white">{option.title}</div>
-                    <div className="text-xs text-gray-400">{option.description}</div>
-                  </div>
-                </div>
-                <div
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => handleToggleWidget(option.id)}
+                  disabled={isDisabled}
                   className={clsx(
-                    'rounded-lg px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
+                    'flex items-center justify-between gap-3 rounded-xl border p-4 text-left transition',
                     isSelected
-                      ? 'bg-gold-500/20 text-gold-200'
-                      : 'bg-ink-900/60 text-gray-400'
+                      ? 'border-gold-500/40 bg-gold-500/10 shadow-[0_0_20px_-10px_rgba(212,175,55,0.5)]'
+                      : 'border-gold-500/10 bg-ink-900/40 hover:border-gold-500/30',
+                    isDisabled && 'cursor-not-allowed opacity-60'
                   )}
                 >
-                  {isSelected ? 'Selected' : 'Add'}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 flex h-9 w-9 items-center justify-center rounded-lg border border-gold-500/20 bg-ink-900/60 text-gold-300">
+                      <Icon size={16} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">{option.title}</div>
+                      <div className="text-xs text-gray-400">{option.description}</div>
+                    </div>
+                  </div>
+                  <div
+                    className={clsx(
+                      'rounded-lg px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
+                      isSelected
+                        ? 'bg-gold-500/20 text-gold-200'
+                        : 'bg-ink-900/60 text-gray-400'
+                    )}
+                  >
+                    {isSelected ? 'Selected' : 'Add'}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className={clsx('grid gap-6', widgetGridCols)}>
         {selectedWidgets.length === 0 ? (
@@ -531,6 +802,7 @@ const DashboardHome: React.FC = () => {
         )}
       </section>
     </div>
+    </>
   );
 };
 
