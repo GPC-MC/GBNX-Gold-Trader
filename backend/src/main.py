@@ -56,6 +56,8 @@ import numpy as np
 from src.llm import FallbackLLM
 from langchain_core.prompts import PromptTemplate
 from src.tools import get_latest_news
+from textblob import TextBlob
+import re
 
 
 logger = logging.getLogger(__name__)
@@ -130,6 +132,22 @@ class NewsArticle(BaseModel):
 class NewsResponse(BaseModel):
     articles: List[NewsArticle]
     count: int
+
+class SentimentAnalysisRequest(BaseModel):
+    text: str
+    source: Optional[str] = "user_input"
+
+class SentimentResult(BaseModel):
+    sentiment: str  # positive, negative, neutral
+    score: float  # -1 to 1
+    magnitude: float  # 0 to 1
+    label: str  # Bullish, Bearish, Neutral
+    confidence: str  # High, Medium, Low
+
+class SentimentAnalysisResponse(BaseModel):
+    result: SentimentResult
+    analysis: str
+    keywords: List[str]
 
 def calculate_ema(data: pd.Series, period: int) -> pd.Series:
     """Calculate Exponential Moving Average"""
@@ -357,3 +375,168 @@ def fetch_more_data_for_indicators():
         offset=6950  # Start earlier to get enough historical data
     )
     return get_livechart_data(req)
+
+def extract_financial_keywords(text: str) -> List[str]:
+    """Extract relevant financial and market keywords from text"""
+    # Common gold trading and market keywords
+    gold_keywords = [
+        'gold', 'xau', 'bullion', 'precious metals',
+        'fed', 'federal reserve', 'interest rate', 'inflation',
+        'dollar', 'usd', 'currency', 'forex',
+        'bull', 'bear', 'rally', 'correction', 'breakout',
+        'support', 'resistance', 'trend', 'momentum',
+        'risk', 'hedge', 'safe haven', 'volatility'
+    ]
+
+    text_lower = text.lower()
+    found_keywords = []
+
+    for keyword in gold_keywords:
+        if keyword in text_lower:
+            found_keywords.append(keyword)
+
+    return found_keywords[:10]  # Limit to top 10 keywords
+
+def analyze_market_sentiment(text: str) -> SentimentResult:
+    """
+    Analyze sentiment of market-related text using TextBlob.
+    Returns sentiment tailored for financial/trading context.
+    """
+    # Clean the text
+    text = re.sub(r'http\S+', '', text)  # Remove URLs
+    text = re.sub(r'[^a-zA-Z0-9\s.,!?]', '', text)  # Remove special characters
+
+    # Perform sentiment analysis
+    blob = TextBlob(text)
+    polarity = blob.sentiment.polarity  # -1 to 1
+    subjectivity = blob.sentiment.subjectivity  # 0 to 1
+
+    # Map to financial sentiment labels
+    if polarity > 0.1:
+        sentiment = "positive"
+        label = "Bullish"
+    elif polarity < -0.1:
+        sentiment = "negative"
+        label = "Bearish"
+    else:
+        sentiment = "neutral"
+        label = "Neutral"
+
+    # Calculate magnitude (strength of sentiment)
+    magnitude = abs(polarity)
+
+    # Determine confidence based on subjectivity and magnitude
+    if magnitude > 0.5 and subjectivity > 0.5:
+        confidence = "High"
+    elif magnitude > 0.2 or subjectivity > 0.3:
+        confidence = "Medium"
+    else:
+        confidence = "Low"
+
+    return SentimentResult(
+        sentiment=sentiment,
+        score=round(polarity, 3),
+        magnitude=round(magnitude, 3),
+        label=label,
+        confidence=confidence
+    )
+
+def generate_sentiment_analysis(text: str, sentiment_result: SentimentResult, keywords: List[str]) -> str:
+    """Generate human-readable analysis of the sentiment"""
+    analysis_parts = []
+
+    # Opening statement
+    analysis_parts.append(
+        f"The text shows a {sentiment_result.label.lower()} sentiment with a {sentiment_result.confidence.lower()} confidence level."
+    )
+
+    # Score interpretation
+    if sentiment_result.score > 0.5:
+        analysis_parts.append(
+            f"The sentiment score of {sentiment_result.score} indicates strong positive market sentiment."
+        )
+    elif sentiment_result.score > 0.1:
+        analysis_parts.append(
+            f"The sentiment score of {sentiment_result.score} indicates moderate positive sentiment."
+        )
+    elif sentiment_result.score < -0.5:
+        analysis_parts.append(
+            f"The sentiment score of {sentiment_result.score} indicates strong negative market sentiment."
+        )
+    elif sentiment_result.score < -0.1:
+        analysis_parts.append(
+            f"The sentiment score of {sentiment_result.score} indicates moderate negative sentiment."
+        )
+    else:
+        analysis_parts.append(
+            f"The sentiment score of {sentiment_result.score} indicates neutral market sentiment."
+        )
+
+    # Keywords context
+    if keywords:
+        keywords_str = ", ".join(keywords[:5])
+        analysis_parts.append(
+            f"Key market indicators mentioned include: {keywords_str}."
+        )
+
+    # Trading implication
+    if sentiment_result.label == "Bullish" and sentiment_result.confidence == "High":
+        analysis_parts.append(
+            "This suggests potential upward price momentum for gold."
+        )
+    elif sentiment_result.label == "Bearish" and sentiment_result.confidence == "High":
+        analysis_parts.append(
+            "This suggests potential downward pressure on gold prices."
+        )
+    else:
+        analysis_parts.append(
+            "Market direction remains uncertain based on this analysis."
+        )
+
+    return " ".join(analysis_parts)
+
+@app.post("/analyze_sentiment", response_model=SentimentAnalysisResponse)
+async def analyze_sentiment_endpoint(request: SentimentAnalysisRequest):
+    """
+    API endpoint to analyze sentiment of market-related text.
+
+    Args:
+        request (SentimentAnalysisRequest): Contains the text to analyze.
+
+    Returns:
+        SentimentAnalysisResponse: Contains sentiment results, analysis, and keywords.
+    """
+    try:
+        logger.info(f"Analyzing sentiment for text from source: {request.source}")
+
+        if not request.text or len(request.text.strip()) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Text must be at least 10 characters long"
+            )
+
+        # Perform sentiment analysis
+        sentiment_result = analyze_market_sentiment(request.text)
+
+        # Extract keywords
+        keywords = extract_financial_keywords(request.text)
+
+        # Generate analysis
+        analysis = generate_sentiment_analysis(request.text, sentiment_result, keywords)
+
+        logger.info(f"Sentiment analysis completed: {sentiment_result.label} ({sentiment_result.confidence})")
+
+        return SentimentAnalysisResponse(
+            result=sentiment_result,
+            analysis=analysis,
+            keywords=keywords
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error analyzing sentiment: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to analyze sentiment: {str(e)}"
+        )
