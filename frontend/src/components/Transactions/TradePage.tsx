@@ -41,6 +41,7 @@ const TradePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [txnId, setTxnId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
 
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [goldPriceLoading, setGoldPriceLoading] = useState(false);
@@ -116,7 +117,7 @@ const TradePage: React.FC = () => {
     setLoading(true);
 
     try {
-      const res = await fetch(`${apiBaseUrl}/transactions/buy`, {
+      const res = await fetch(`${apiBaseUrl}/transactions/${tradeType}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -151,7 +152,7 @@ const TradePage: React.FC = () => {
         <div>
           <div className="text-xs font-semibold tracking-[0.18em] text-gold-500">TRADE</div>
           <h1 className="mt-2 text-3xl sm:text-4xl font-semibold text-white">Gold Trade Desk</h1>
-          <p className="mt-2 text-sm text-gray-400">Create buys and monitor balance flow between MC and House.</p>
+          <p className="mt-2 text-sm text-gray-400">Create buys and sells while monitoring balance flow between MC and House.</p>
         </div>
         <button
           onClick={() => { void fetchBalances(); void fetchGoldPrice(); }}
@@ -164,8 +165,34 @@ const TradePage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8">
         <form onSubmit={onSubmit} className="rounded-2xl border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm p-6">
-          <div className="text-xs font-semibold tracking-[0.18em] text-gold-500">BUY GOLD</div>
+          <div className="text-xs font-semibold tracking-[0.18em] text-gold-500">
+            {tradeType === 'buy' ? 'BUY GOLD' : 'SELL GOLD'}
+          </div>
           <h2 className="mt-2 text-2xl font-semibold text-white">Execute trade</h2>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {(['buy', 'sell'] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => {
+                  setTradeType(type);
+                  setError(null);
+                  setTxnId(null);
+                }}
+                className={clsx(
+                  'rounded-full border px-4 py-1.5 text-xs font-semibold tracking-[0.16em] transition',
+                  tradeType === type
+                    ? type === 'sell'
+                      ? 'border-rose-500/50 bg-rose-500/15 text-rose-200'
+                      : 'border-gold-500/50 bg-gold-500/15 text-gold-300'
+                    : 'border-ink-700/80 bg-ink-800/60 text-gray-400 hover:text-gold-300'
+                )}
+              >
+                {type === 'buy' ? 'BUY' : 'SELL'}
+              </button>
+            ))}
+          </div>
 
           <div className="mt-6 grid gap-4">
             <label className="text-sm text-gray-300">
@@ -193,12 +220,18 @@ const TradePage: React.FC = () => {
             <button
               type="submit"
               disabled={loading || !goldPrice}
-              className="inline-flex items-center justify-center rounded-xl bg-gold-500/15 border border-gold-500/30 text-gold-300 font-semibold px-5 py-2.5 hover:bg-gold-500/25 transition disabled:opacity-60"
+              className={clsx(
+                'inline-flex items-center justify-center rounded-xl border font-semibold px-5 py-2.5 transition disabled:opacity-60',
+                tradeType === 'sell'
+                  ? 'bg-rose-500/15 border-rose-500/30 text-rose-200 hover:bg-rose-500/25'
+                  : 'bg-gold-500/15 border-gold-500/30 text-gold-300 hover:bg-gold-500/25'
+              )}
             >
-              {loading ? 'Submitting...' : 'Buy Gold'}
+              {loading ? 'Submitting...' : tradeType === 'buy' ? 'Buy Gold' : 'Sell Gold'}
             </button>
             <div className="text-sm text-gray-400">
-              1 oz = 31.1035 g · Est. USD total: <span className="text-emerald-300 font-semibold">${formatNumber(estUsd)}</span>
+              1 oz = 31.1035 g · {tradeType === 'buy' ? 'Est. USD total' : 'Est. USD proceeds'}:{' '}
+              <span className="text-emerald-300 font-semibold">${formatNumber(estUsd)}</span>
             </div>
           </div>
 
