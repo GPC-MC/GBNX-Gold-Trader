@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { ArrowLeftRight, RefreshCcw } from 'lucide-react';
 
-const OZ_PER_GRAM = 1 / 31.1035;
+const OZ_PER_GRAM = 1 / 31.1034768;
 
 interface BalanceEntry {
   asset: string;
@@ -46,13 +46,16 @@ const TradePage: React.FC = () => {
   const [goldPrice, setGoldPrice] = useState<number | null>(null);
   const [goldPriceLoading, setGoldPriceLoading] = useState(false);
   const [goldPriceError, setGoldPriceError] = useState<string | null>(null);
+  const [goldPriceAt, setGoldPriceAt] = useState<Date | null>(null);
 
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [balancesLoading, setBalancesLoading] = useState(false);
   const [balancesError, setBalancesError] = useState<string | null>(null);
+  const [lastTrade, setLastTrade] = useState<{ type: 'buy' | 'sell'; grams: number; estUsd: number } | null>(null);
 
   const grams = Number(goldGrams || 0);
-  const estUsd = goldPrice ? grams * OZ_PER_GRAM * goldPrice : 0;
+  const estOz = grams * OZ_PER_GRAM;
+  const estUsd = goldPrice ? estOz * goldPrice : 0;
 
   const fetchBalances = async () => {
     if (!apiBaseUrl) return;
@@ -83,6 +86,7 @@ const TradePage: React.FC = () => {
       }
       const data = (await res.json()) as { price_usd_per_oz: number };
       setGoldPrice(data.price_usd_per_oz);
+      setGoldPriceAt(new Date());
     } catch (err) {
       setGoldPriceError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -104,6 +108,7 @@ const TradePage: React.FC = () => {
 
     setError(null);
     setTxnId(null);
+    setLastTrade(null);
 
     if (grams <= 0) {
       setError('Gold quantity must be greater than zero.');
@@ -132,6 +137,7 @@ const TradePage: React.FC = () => {
 
       const data = await res.json();
       setTxnId(data.transaction_id);
+      setLastTrade({ type: tradeType, grams, estUsd });
       setGoldGrams('');
       void fetchBalances();
     } catch (err) {
@@ -143,6 +149,15 @@ const TradePage: React.FC = () => {
 
   const mcBalance = balances.find((balance) => balance.account === 'MC');
   const houseBalance = balances.find((balance) => balance.account === 'House Admin');
+
+  const mcXauBalance = mcBalance?.balances.find((e) => e.asset === 'XAU')?.balance ?? 0;
+  const mcUsdBalance = mcBalance?.balances.find((e) => e.asset === 'USD')?.balance ?? 0;
+  const insufficientBalance =
+    grams > 0 && goldPrice
+      ? tradeType === 'buy'
+        ? estUsd > mcUsdBalance
+        : estOz > mcXauBalance
+      : false;
 
   const assetRows = ['XAU', 'USD'];
 
@@ -179,6 +194,7 @@ const TradePage: React.FC = () => {
                   setTradeType(type);
                   setError(null);
                   setTxnId(null);
+                  setLastTrade(null);
                 }}
                 className={clsx(
                   'rounded-full border px-4 py-1.5 text-xs font-semibold tracking-[0.16em] transition',
@@ -199,7 +215,7 @@ const TradePage: React.FC = () => {
               Gold (grams)
               <input
                 value={goldGrams}
-                onChange={(e) => setGoldGrams(e.target.value)}
+                onChange={(e) => { setGoldGrams(e.target.value); setTxnId(null); setLastTrade(null); }}
                 type="number"
                 step="0.01"
                 min="0"
@@ -208,7 +224,10 @@ const TradePage: React.FC = () => {
             </label>
 
             <div className="rounded-xl bg-ink-800/60 border border-gold-500/10 px-3 py-2.5 flex items-center justify-between">
-              <span className="text-sm text-gray-400">Live price (USD / oz)</span>
+              <div>
+                <span className="text-sm text-gray-400">Live price (USD / oz)</span>
+                {goldPriceAt && <div className="text-xs text-gray-500">Updated {goldPriceAt.toLocaleTimeString()}</div>}
+              </div>
               <span className="text-sm font-semibold text-gold-300">
                 {goldPriceLoading ? 'Fetching...' : goldPriceError ? '—' : goldPrice ? `$${formatNumber(goldPrice, 2)}` : '—'}
               </span>
@@ -216,10 +235,18 @@ const TradePage: React.FC = () => {
             {goldPriceError && <div className="text-xs text-rose-300">{goldPriceError}</div>}
           </div>
 
+          {insufficientBalance && (
+            <div className="mt-4 text-xs text-rose-300">
+              {tradeType === 'buy'
+                ? `Insufficient USD balance. Available: $${formatNumber(mcUsdBalance)} · Required: $${formatNumber(estUsd)}`
+                : `Insufficient XAU balance. Available: ${formatNumber(mcXauBalance, 3)} oz · Required: ${formatNumber(estOz, 3)} oz`}
+            </div>
+          )}
+
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <button
               type="submit"
-              disabled={loading || !goldPrice}
+              disabled={loading || !goldPrice || insufficientBalance}
               className={clsx(
                 'inline-flex items-center justify-center rounded-xl border font-semibold px-5 py-2.5 transition disabled:opacity-60',
                 tradeType === 'sell'
@@ -236,10 +263,29 @@ const TradePage: React.FC = () => {
           </div>
 
           {error && <div className="mt-4 text-sm text-rose-300">{error}</div>}
-          {txnId && (
+          {txnId && lastTrade && (
             <div className="mt-6 rounded-xl border border-gold-500/20 bg-ink-800/60 p-4">
-              <div className="text-xs text-gold-400">Transaction ID</div>
-              <div className="mt-1 text-sm text-white break-all">{txnId}</div>
+              <div className="text-xs font-semibold text-gold-400">Trade Confirmed</div>
+              <div className="mt-3 space-y-1.5 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Type</span>
+                  <span className={lastTrade.type === 'buy' ? 'font-semibold text-gold-300' : 'font-semibold text-rose-300'}>
+                    {lastTrade.type === 'buy' ? 'Buy' : 'Sell'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Gold</span>
+                  <span className="text-white">{formatNumber(lastTrade.grams, 2)} g</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400">Est. USD</span>
+                  <span className="text-white">${formatNumber(lastTrade.estUsd)}</span>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-gold-500/10">
+                <div className="text-xs text-gray-500">Transaction ID</div>
+                <div className="mt-1 text-xs text-white break-all">{txnId}</div>
+              </div>
             </div>
           )}
         </form>
