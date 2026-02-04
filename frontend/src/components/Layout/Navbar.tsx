@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,20 +9,43 @@ import {
   Bot,
   User,
   LogOut,
-  Newspaper
+  Newspaper,
+  ArrowLeftRight,
+  BarChart3
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
 
+  const apiBaseUrl = useMemo(() => {
+    const raw = (import.meta.env.VITE_BACKEND_API_BASE_URL as string | undefined) || '';
+    return raw.replace(/\/+$/, '');
+  }, []);
+
+  const [mcXau, setMcXau] = useState(0);
+
+  useEffect(() => {
+    if (!apiBaseUrl) return;
+    fetch(`${apiBaseUrl}/transactions/balance/MC`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const xau = data.balances?.find((b: { asset: string }) => b.asset === 'XAU')?.balance ?? 0;
+        setMcXau(xau);
+      })
+      .catch(() => {});
+  }, [apiBaseUrl]);
+
   const primaryNavItems = [
     { path: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
     { path: '/dashboard/portfolio', icon: Briefcase, label: 'Portfolio' },
-    { path: '/dashboard/market', icon: TrendingUp, label: 'Market' }
+    { path: '/dashboard/market', icon: TrendingUp, label: 'Market' },
+    { path: '/dashboard/trade', icon: ArrowLeftRight, label: 'Trade' }
   ];
 
   const secondaryNavItems = [
     { path: '/dashboard/news', icon: Newspaper, label: 'Market News' },
+    { path: '/dashboard/balances', icon: BarChart3, label: 'Balances' },
     { path: '/dashboard/ai-studio', icon: Bot, label: 'AI Studio' }
   ];
 
@@ -92,10 +115,10 @@ const Navbar: React.FC = () => {
           <div className="flex items-center space-x-6">
             {/* Total Balance - Simplified */}
             <div className="hidden md:block">
-              <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-gold-500/70 mb-0.5 text-right">Total Balance</div>
+              <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-gold-500/70 mb-0.5 text-right">MC Gold</div>
               <div className="flex items-baseline justify-end space-x-2">
-                <span className="text-sm font-bold text-white tracking-wide">$2,345</span>
-                <span className="text-xs font-semibold text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.3)]">+0.8%</span>
+                <span className="text-sm font-bold text-white tracking-wide">{mcXau.toFixed(3)} oz</span>
+                <span className="text-xs font-semibold text-gold-400">XAU</span>
               </div>
             </div>
 

@@ -7,6 +7,8 @@ import DashboardHome from './components/Dashboard/DashboardHome';
 import Market from './components/Market/Market';
 import Portfolio from './components/Portfolio/Portfolio';
 import AIStudio from './components/AIStudio/AIStudio';
+import TradePage from './components/Transactions/TradePage';
+import BalancesPage from './components/Transactions/BalancesPage';
 import GoldAIAssistantPage from './components/GoldAIAssistant/GoldAIAssistantPage';
 import MarketAnalystAgentPage from './components/MarketAnalystAgent/MarketAnalystAgentPage';
 import TechnicalAnalystAgentPage from './components/TechnicalAnalystAgent/TechnicalAnalystAgentPage';
@@ -84,6 +86,8 @@ function App() {
             <Route path="market" element={<Market />} />
             <Route path="news" element={<MarketNews />} />
             <Route path="portfolio" element={<Portfolio />} />
+            <Route path="trade" element={<TradePage />} />
+            <Route path="balances" element={<BalancesPage />} />
             <Route path="ai-studio" element={<AIStudio />} />
             <Route path="profile" element={<Profile />} />
           </Route>
@@ -92,6 +96,8 @@ function App() {
           <Route path="/market" element={<Navigate to="/dashboard/market" replace />} />
           <Route path="/news" element={<Navigate to="/dashboard/news" replace />} />
           <Route path="/portfolio" element={<Navigate to="/dashboard/portfolio" replace />} />
+          <Route path="/trade" element={<Navigate to="/dashboard/trade" replace />} />
+          <Route path="/balances" element={<Navigate to="/dashboard/balances" replace />} />
           <Route path="/ai-studio" element={<Navigate to="/dashboard/ai-studio" replace />} />
           <Route path="/dashboard/ai-studio/gold-ai-assistant" element={<Navigate to="/gold-ai-assistant" replace />} />
           <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
