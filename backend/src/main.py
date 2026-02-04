@@ -1,31 +1,13 @@
-import asyncio
-import base64
-import hashlib
-import io
-import json
-import os
-import queue
+
 import re
-import shutil
-import tempfile
-import threading
 import time
-import uuid
-import wave
 from collections import deque
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Set
 
-import boto3
 import numpy as np
-import openai  # or other LLM client
 import requests
-import sounddevice as sd
-import torch
-import torchaudio
-import uvicorn
-import websockets
 from fastapi import (
     FastAPI,
     File,
@@ -35,12 +17,7 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
-from pyannote.audio import Pipeline
 from pydantic import BaseModel
-from RealtimeSTT import AudioToTextRecorder
-from src.agent import Agent
 from src.schema import ChatRequest, UserThread, UserQuestion, NewsRequest, InitializeAgentRequest
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, HTTPException
@@ -53,11 +30,8 @@ from typing import Dict, Any, Optional, List
 import logging
 import pandas as pd
 import numpy as np
-from src.llm import FallbackLLM
 from src.routers.transactions import router as transactions_router
-from langchain_core.prompts import PromptTemplate
 from src.tools import get_latest_news
-from textblob import TextBlob
 import re
 
 
@@ -85,36 +59,6 @@ agent = None
 async def root():
     current_time = time.strftime("%Y-%m-%d %H:%M:%S")
     return {"message": "AI Agent platform is running v1!", "datetime": current_time}
-
-@app.post("/initialize_agent")
-async def initialize_agent(request: InitializeAgentRequest):
-    global agent
-    try:
-        agent = Agent(expert_prompt=request.expert_prompt)
-        logger.info("Agent initialized successfully")
-        return {"message": "Agent initialized successfully"}
-    except Exception as e:
-        logger.error(f"Error initializing agent: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to initialize agent: {str(e)}")
-
-@app.post("/chat")
-async def chat(request: ChatRequest):
-    global agent
-    if agent is None:
-        raise HTTPException(status_code=400, detail="Agent not initialized. Please call /initialize_agent first.")
-    
-    try:
-        user_thread = UserThread(user_id="1", thread_id="1", agent_name="calculator")
-        user_question = UserQuestion(user_thread=user_thread, question=request.question)
-        start_time = time.time()
-        res = agent.print_stream(user_question)
-        end_time = time.time()
-        time_taken = end_time - start_time
-        logger.info(f"Chat response generated in {time_taken:.2f} seconds")
-        return {"message": res, "time_taken": time_taken}
-    except Exception as e:
-        logger.error(f"Error in chat endpoint: {e}")
-        raise HTTPException(status_code=500, detail=f"Chat processing failed: {str(e)}")
 
 
 

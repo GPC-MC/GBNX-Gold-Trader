@@ -38,20 +38,20 @@ const TradePage: React.FC = () => {
   }, []);
 
   const [goldGrams, setGoldGrams] = useState('');
-  const [pricePerOz, setPricePerOz] = useState('');
-  const [valueDate, setValueDate] = useState('');
-  const [reference, setReference] = useState('');
   const [loading, setLoading] = useState(false);
   const [txnId, setTxnId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [goldPrice, setGoldPrice] = useState<number | null>(null);
+  const [goldPriceLoading, setGoldPriceLoading] = useState(false);
+  const [goldPriceError, setGoldPriceError] = useState<string | null>(null);
 
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [balancesLoading, setBalancesLoading] = useState(false);
   const [balancesError, setBalancesError] = useState<string | null>(null);
 
   const grams = Number(goldGrams || 0);
-  const price = Number(pricePerOz || 0);
-  const estUsd = grams * OZ_PER_GRAM * price;
+  const estUsd = goldPrice ? grams * OZ_PER_GRAM * goldPrice : 0;
 
   const fetchBalances = async () => {
     if (!apiBaseUrl) return;
@@ -71,8 +71,27 @@ const TradePage: React.FC = () => {
     }
   };
 
+  const fetchGoldPrice = async () => {
+    if (!apiBaseUrl) return;
+    setGoldPriceLoading(true);
+    setGoldPriceError(null);
+    try {
+      const res = await fetch(`${apiBaseUrl}/transactions/gold-price`);
+      if (!res.ok) {
+        throw new Error(await parseErrorMessage(res));
+      }
+      const data = (await res.json()) as { price_usd_per_oz: number };
+      setGoldPrice(data.price_usd_per_oz);
+    } catch (err) {
+      setGoldPriceError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setGoldPriceLoading(false);
+    }
+  };
+
   useEffect(() => {
     void fetchBalances();
+    void fetchGoldPrice();
   }, [apiBaseUrl]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -85,8 +104,12 @@ const TradePage: React.FC = () => {
     setError(null);
     setTxnId(null);
 
-    if (grams <= 0 || price <= 0) {
-      setError('Gold quantity and price must be greater than zero.');
+    if (grams <= 0) {
+      setError('Gold quantity must be greater than zero.');
+      return;
+    }
+    if (!goldPrice) {
+      setError('Gold price has not been fetched yet.');
       return;
     }
 
@@ -98,9 +121,7 @@ const TradePage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           gold_grams: grams,
-          price_usd_per_oz: price,
-          value_date: valueDate || undefined,
-          reference: reference || undefined
+          price_usd_per_oz: goldPrice
         })
       });
 
@@ -111,9 +132,6 @@ const TradePage: React.FC = () => {
       const data = await res.json();
       setTxnId(data.transaction_id);
       setGoldGrams('');
-      setPricePerOz('');
-      setValueDate('');
-      setReference('');
       void fetchBalances();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -123,7 +141,7 @@ const TradePage: React.FC = () => {
   };
 
   const mcBalance = balances.find((balance) => balance.account === 'MC');
-  const houseBalance = balances.find((balance) => balance.account === 'House');
+  const houseBalance = balances.find((balance) => balance.account === 'House Admin');
 
   const assetRows = ['XAU', 'USD'];
 
@@ -136,7 +154,7 @@ const TradePage: React.FC = () => {
           <p className="mt-2 text-sm text-gray-400">Create buys and monitor balance flow between MC and House.</p>
         </div>
         <button
-          onClick={fetchBalances}
+          onClick={() => { void fetchBalances(); void fetchGoldPrice(); }}
           className="inline-flex items-center gap-2 rounded-xl border border-gold-500/20 bg-ink-850/55 px-4 py-2 text-sm font-semibold text-gold-300 hover:bg-gold-500/10 transition"
         >
           <RefreshCcw size={16} />
@@ -162,45 +180,19 @@ const TradePage: React.FC = () => {
               />
             </label>
 
-            <label className="text-sm text-gray-300">
-              Price (USD per oz)
-              <input
-                value={pricePerOz}
-                onChange={(e) => setPricePerOz(e.target.value)}
-                type="number"
-                step="0.01"
-                min="0"
-                className="mt-2 w-full rounded-xl bg-ink-800/60 border border-gold-500/10 px-3 py-2 text-white"
-              />
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label className="text-sm text-gray-300">
-                Value date (optional)
-                <input
-                  value={valueDate}
-                  onChange={(e) => setValueDate(e.target.value)}
-                  type="date"
-                  className="mt-2 w-full rounded-xl bg-ink-800/60 border border-gold-500/10 px-3 py-2 text-white"
-                />
-              </label>
-
-              <label className="text-sm text-gray-300">
-                Reference (optional)
-                <input
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  type="text"
-                  className="mt-2 w-full rounded-xl bg-ink-800/60 border border-gold-500/10 px-3 py-2 text-white"
-                />
-              </label>
+            <div className="rounded-xl bg-ink-800/60 border border-gold-500/10 px-3 py-2.5 flex items-center justify-between">
+              <span className="text-sm text-gray-400">Live price (USD / oz)</span>
+              <span className="text-sm font-semibold text-gold-300">
+                {goldPriceLoading ? 'Fetching...' : goldPriceError ? '—' : goldPrice ? `$${formatNumber(goldPrice, 2)}` : '—'}
+              </span>
             </div>
+            {goldPriceError && <div className="text-xs text-rose-300">{goldPriceError}</div>}
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !goldPrice}
               className="inline-flex items-center justify-center rounded-xl bg-gold-500/15 border border-gold-500/30 text-gold-300 font-semibold px-5 py-2.5 hover:bg-gold-500/25 transition disabled:opacity-60"
             >
               {loading ? 'Submitting...' : 'Buy Gold'}

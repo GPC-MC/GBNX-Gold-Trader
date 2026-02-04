@@ -116,10 +116,13 @@ BEGIN
     -- Lock buyer's USD ledger entries and check balance
     SELECT COALESCE(SUM(amount), 0)
     INTO v_buyer_usd_balance
-    FROM ledger_entries
-    WHERE account_id = p_buyer_account_id
-      AND asset_id = v_usd_asset_id
-    FOR UPDATE;
+    FROM (
+        SELECT amount
+        FROM ledger_entries
+        WHERE account_id = p_buyer_account_id
+          AND asset_id = v_usd_asset_id
+        FOR UPDATE
+    ) AS locked_rows;
 
     IF v_buyer_usd_balance < v_usd_amount THEN
         RAISE EXCEPTION 'Insufficient USD balance for buyer. Required: %, Available: %',
@@ -129,10 +132,13 @@ BEGIN
     -- Lock seller's XAU ledger entries and check balance
     SELECT COALESCE(SUM(amount), 0)
     INTO v_seller_xau_balance
-    FROM ledger_entries
-    WHERE account_id = p_seller_account_id
-      AND asset_id = v_xau_asset_id
-    FOR UPDATE;
+    FROM (
+        SELECT amount
+        FROM ledger_entries
+        WHERE account_id = p_seller_account_id
+          AND asset_id = v_xau_asset_id
+        FOR UPDATE
+    ) AS locked_rows;
 
     IF v_seller_xau_balance < v_gold_oz THEN
         RAISE EXCEPTION 'Insufficient XAU balance for seller. Required: % oz, Available: % oz',

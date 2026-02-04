@@ -2,9 +2,11 @@ from collections import defaultdict
 from datetime import date
 from typing import Optional
 
+import requests
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from src.app_config import app_config
 from src.db import get_db
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
@@ -31,6 +33,26 @@ class AccountBalance(BaseModel):
     balances: list[AssetBalance]
 
 
+class GoldPriceResponse(BaseModel):
+    price_usd_per_oz: float
+
+
+@router.get("/gold-price", response_model=GoldPriceResponse)
+async def get_gold_price():
+    if not app_config.GOLDIO:
+        raise HTTPException(500, detail="GOLDIO API key is not configured")
+    try:
+        res = requests.get(
+            "https://www.goldapi.io/api/XAU/USD",
+            headers={"x-access-token": app_config.GOLDIO},
+            timeout=10,
+        )
+        res.raise_for_status()
+        return GoldPriceResponse(price_usd_per_oz=res.json()["price"])
+    except requests.RequestException as e:
+        raise HTTPException(502, detail=f"Failed to fetch gold price: {e}")
+
+
 def _resolve_account(conn, name: str) -> str:
     with conn.cursor() as cur:
         cur.execute("SELECT id FROM accounts WHERE name = %s", (name,))
@@ -44,11 +66,11 @@ def _resolve_account(conn, name: str) -> str:
 async def mc_buy_gold(req: BuyGoldRequest, conn=Depends(get_db)):
     try:
         buyer_id = _resolve_account(conn, "MC")
-        seller_id = _resolve_account(conn, "House")
+        seller_id = _resolve_account(conn, "House Admin")
 
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT create_gold_trade(%s, %s, %s, %s, %s, %s, NULL)",
+                "SELECT create_gold_trade(%s::UUID, %s::UUID, %s::NUMERIC, %s::NUMERIC, %s::DATE, %s::TEXT, NULL::UUID)",
                 (
                     buyer_id,
                     seller_id,
