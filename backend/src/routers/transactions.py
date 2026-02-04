@@ -81,13 +81,14 @@ async def mc_buy_gold(req: BuyGoldRequest, conn=Depends(get_db)):
 
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT create_gold_trade(%s::UUID, %s::UUID, %s::NUMERIC, %s::NUMERIC, %s::DATE, %s::TEXT, NULL::UUID)",
+                "SELECT create_gold_trade(%s::UUID, %s::UUID, %s::NUMERIC, %s::NUMERIC, %s::DATE, %s::TEXT, %s::TEXT, NULL::UUID)",
                 (
                     buyer_id,
                     seller_id,
                     req.gold_grams,
                     req.price_usd_per_oz,
                     req.value_date or date.today(),
+                    "buy",
                     req.reference,
                 ),
             )
@@ -109,13 +110,14 @@ async def mc_sell_gold(req: SellGoldRequest, conn=Depends(get_db)):
 
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT create_gold_trade(%s::UUID, %s::UUID, %s::NUMERIC, %s::NUMERIC, %s::DATE, %s::TEXT, NULL::UUID)",
+                "SELECT create_gold_trade(%s::UUID, %s::UUID, %s::NUMERIC, %s::NUMERIC, %s::DATE, %s::TEXT, %s::TEXT, NULL::UUID)",
                 (
                     buyer_id,
                     seller_id,
                     req.gold_grams,
                     req.price_usd_per_oz,
                     req.value_date or date.today(),
+                    "sell",
                     req.reference,
                 ),
             )

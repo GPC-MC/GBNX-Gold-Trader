@@ -16,6 +16,7 @@
 --   p_gold_grams          NUMERIC - Quantity of gold in grams
 --   p_price_usd_per_oz    NUMERIC - Price in USD per troy ounce
 --   p_value_date          DATE    - Effective settlement date
+--   p_trade_type          TEXT    - Trade direction: 'buy' or 'sell'
 --   p_reference           TEXT    - Human-readable reference (auto-generated if NULL)
 --   p_created_by          UUID    - Admin/user creating the transaction
 --
@@ -28,6 +29,7 @@
 --       p_gold_grams         := 100.0,
 --       p_price_usd_per_oz   := 2000.00,
 --       p_value_date         := '2026-02-03',
+--       p_trade_type         := 'buy',
 --       p_reference          := 'TXN-20260203-001',
 --       p_created_by         := '123e4567-e89b-12d3-a456-426614174002'
 --   );
@@ -39,6 +41,7 @@ CREATE OR REPLACE FUNCTION create_gold_trade(
     p_gold_grams NUMERIC,
     p_price_usd_per_oz NUMERIC,
     p_value_date DATE,
+    p_trade_type TEXT,
     p_reference TEXT DEFAULT NULL,
     p_created_by UUID DEFAULT NULL
 )
@@ -105,6 +108,10 @@ BEGIN
         RAISE EXCEPTION 'Calculated USD amount must be positive, got %', v_usd_amount;
     END IF;
 
+    IF p_trade_type NOT IN ('buy', 'sell') THEN
+        RAISE EXCEPTION 'trade_type must be ''buy'' or ''sell'', got ''%''', p_trade_type;
+    END IF;
+
     -- =============================================================================
     -- STEP 3: Lock and Verify Account Balances
     -- =============================================================================
@@ -162,7 +169,7 @@ BEGIN
     ) VALUES (
         gen_random_uuid(),
         COALESCE(p_reference, 'TXN-' || to_char(NOW(), 'YYYYMMDDHH24MISS')),
-        'buy',
+        p_trade_type,
         p_gold_grams,
         p_price_usd_per_oz,
         p_value_date,
