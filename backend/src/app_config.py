@@ -69,6 +69,7 @@ class AppConfig(BaseSettings):
     DB_HOST: Optional[str] = None
     DB_PORT: Optional[int] = None
 
+    GOLDIO: Optional[str] = None
     SERPI_API_KEY: Optional[str] = None
 
     GAMA_X_API_KEY: Optional[str] = None
