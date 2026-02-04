@@ -54,6 +54,7 @@ import logging
 import pandas as pd
 import numpy as np
 from src.llm import FallbackLLM
+from src.routers.transactions import router as transactions_router
 from langchain_core.prompts import PromptTemplate
 from src.tools import get_latest_news
 from textblob import TextBlob
@@ -74,6 +75,8 @@ app.add_middleware(
     allow_headers=["*"],  
 )
 
+
+app.include_router(transactions_router)
 
 agent = None
 
