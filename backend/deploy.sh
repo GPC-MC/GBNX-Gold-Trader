@@ -100,21 +100,21 @@ check_health() {
     print_message "$RED" "WARNING: Backend might not be ready yet. Check logs with: docker logs $CONTAINER_NAME"
 }
 
-# Function to use docker-compose instead
+# Function to use docker compose instead
 deploy_with_compose() {
-    print_message "$BLUE" "Deploying with docker-compose..."
+    print_message "$BLUE" "Deploying with docker compose..."
 
     # Stop existing services
-    docker-compose down || true
+    docker compose down || true
 
     # Build and start services
-    docker-compose up -d --build
+    docker compose up -d --build
 
     if [ $? -eq 0 ]; then
-        print_message "$GREEN" "✓ Services started with docker-compose"
+        print_message "$GREEN" "✓ Services started with docker compose"
         check_health
     else
-        print_message "$RED" "ERROR: Failed to deploy with docker-compose"
+        print_message "$RED" "ERROR: Failed to deploy with docker compose"
         exit 1
     fi
 }
@@ -162,8 +162,8 @@ main() {
     echo "  Stop container:   docker stop $CONTAINER_NAME"
     echo "  Restart:          docker restart $CONTAINER_NAME"
     echo "  Remove:           docker rm -f $CONTAINER_NAME"
-    echo "  With compose:     docker-compose logs -f"
-    echo "  Stop compose:     docker-compose down"
+    echo "  With compose:     docker compose logs -f"
+    echo "  Stop compose:     docker compose down"
     echo ""
 }
 
