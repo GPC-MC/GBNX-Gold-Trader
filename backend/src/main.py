@@ -31,6 +31,7 @@ import logging
 import pandas as pd
 import numpy as np
 from src.routers.transactions import router as transactions_router
+from src.routers.pricing import router as pricing_router
 from src.tools import get_latest_news
 import re
 
@@ -51,6 +52,7 @@ app.add_middleware(
 
 
 app.include_router(transactions_router)
+app.include_router(pricing_router)
 
 agent = None
 

@@ -52,7 +52,15 @@ cleanup_existing() {
 # Function to build Docker image
 build_image() {
     print_message "$BLUE" "Building Docker image..."
-    docker build -t "$IMAGE_NAME:latest" .
+
+    # Try to use BuildKit if available (faster builds with cache)
+    if docker buildx version &> /dev/null; then
+        print_message "$YELLOW" "Using BuildKit for optimized build..."
+        DOCKER_BUILDKIT=1 docker build -t "$IMAGE_NAME:latest" .
+    else
+        print_message "$YELLOW" "BuildKit not available, using standard build..."
+        docker build -t "$IMAGE_NAME:latest" .
+    fi
 
     if [ $? -eq 0 ]; then
         print_message "$GREEN" "✓ Docker image built successfully"
@@ -107,8 +115,14 @@ deploy_with_compose() {
     # Stop existing services
     docker compose down || true
 
-    # Build and start services
-    docker compose up -d --build
+    # Build and start services (BuildKit will be used if DOCKER_BUILDKIT env is set)
+    if docker buildx version &> /dev/null; then
+        print_message "$YELLOW" "Using BuildKit for optimized build..."
+        DOCKER_BUILDKIT=1 docker compose up -d --build
+    else
+        print_message "$YELLOW" "BuildKit not available, using standard build..."
+        docker compose up -d --build
+    fi
 
     if [ $? -eq 0 ]; then
         print_message "$GREEN" "✓ Services started with docker compose"

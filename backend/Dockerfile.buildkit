@@ -21,8 +21,9 @@ RUN apt-get update \
 # Copy dependency files first for better layer caching
 COPY pyproject.toml uv.lock ./
 
-# Install Python dependencies (no cache to avoid BuildKit requirement)
-RUN uv sync --frozen --no-dev --no-cache
+# Install Python dependencies with BuildKit cache mount
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 # Copy application code
 COPY src ./src
