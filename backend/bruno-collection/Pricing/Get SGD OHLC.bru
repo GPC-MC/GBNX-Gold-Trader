@@ -1,0 +1,22 @@
+meta {
+  name: Get SGD OHLC
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{base_url}}/api/pricing/ohlc/sgd?interval=3600&limit=50&offset=0&sort=desc
+  body: none
+  auth: none
+}
+
+params:query {
+  interval: 3600
+  limit: 50
+  offset: 0
+  sort: desc
+}
+
+docs {
+  Get OHLC data for Singapore Dollar (USD/SGD)
+}

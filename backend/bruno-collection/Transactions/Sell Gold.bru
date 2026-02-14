@@ -1,0 +1,33 @@
+meta {
+  name: Sell Gold
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/transactions/sell
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "gold_grams": 50.0,
+    "price_usd_per_oz": 2055.75,
+    "value_date": "2024-01-15",
+    "reference": "Test sale"
+  }
+}
+
+docs {
+  Create a gold sale transaction
+
+  Request body:
+  - gold_grams: Amount of gold in grams
+  - price_usd_per_oz: Price per ounce in USD
+  - value_date: Transaction date (optional, defaults to today)
+  - reference: Reference note (optional)
+
+  Returns:
+  - transaction_id: UUID of the created transaction
+}

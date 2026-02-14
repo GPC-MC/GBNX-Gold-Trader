@@ -1,0 +1,22 @@
+meta {
+  name: Get Platinum OHLC
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/pricing/ohlc/platinum?interval=3600&limit=50&offset=0&sort=desc
+  body: none
+  auth: none
+}
+
+params:query {
+  interval: 3600
+  limit: 50
+  offset: 0
+  sort: desc
+}
+
+docs {
+  Get OHLC (Open, High, Low, Close) data for Platinum (XPT/USD)
+}

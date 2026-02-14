@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "GBNX Gold Trader Backend",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

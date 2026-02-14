@@ -1,0 +1,43 @@
+meta {
+  name: Get Latest News
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/latest_news
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "keyword": "gold price"
+  }
+}
+
+docs {
+  Fetch latest news articles based on a keyword
+
+  Request body:
+  - keyword: Search keyword for news articles
+
+  Returns:
+  - articles: Array of news articles
+    - title: Article title
+    - summary: Article summary
+    - source_url: URL to the article
+    - source_name: Name of the news source
+  - count: Total number of articles returned
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response has articles array", function() {
+    expect(res.getBody()).to.have.property('articles');
+    expect(res.getBody().articles).to.be.an('array');
+  });
+}

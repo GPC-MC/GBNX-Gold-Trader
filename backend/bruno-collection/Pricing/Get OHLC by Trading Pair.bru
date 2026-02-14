@@ -1,0 +1,29 @@
+meta {
+  name: Get OHLC by Trading Pair
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{base_url}}/api/pricing/ohlc/xau_usd?interval=3600&limit=50&offset=0&sort=desc
+  body: none
+  auth: none
+}
+
+params:query {
+  interval: 3600
+  limit: 50
+  offset: 0
+  sort: desc
+}
+
+docs {
+  Get OHLC data for any trading pair
+
+  Available trading pairs:
+  - xau_usd (Gold)
+  - xag_usd (Silver)
+  - xpt_usd (Platinum)
+  - usd_sgd (Singapore Dollar)
+  - usd_myr (Malaysian Ringgit)
+}

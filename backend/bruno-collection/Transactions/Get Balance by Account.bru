@@ -1,0 +1,22 @@
+meta {
+  name: Get Balance by Account
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{base_url}}/transactions/balance/MC
+  body: none
+  auth: none
+}
+
+docs {
+  Get balance for a specific account
+
+  Path parameter:
+  - account_name: Name of the account (e.g., "MC", "House Admin")
+
+  Returns:
+  - account: Account name
+  - balances: Array of asset balances
+}

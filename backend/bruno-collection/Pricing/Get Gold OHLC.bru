@@ -1,0 +1,38 @@
+meta {
+  name: Get Gold OHLC
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/pricing/ohlc/gold?interval=3600&limit=50&offset=0&sort=desc
+  body: none
+  auth: none
+}
+
+params:query {
+  interval: 3600
+  limit: 50
+  offset: 0
+  sort: desc
+}
+
+docs {
+  Get OHLC (Open, High, Low, Close) data for Gold (XAU/USD)
+
+  Parameters:
+  - interval: Time interval in seconds (default: 3600 = 1 hour)
+  - limit: Number of data points to return (default: 50)
+  - offset: Offset for pagination (default: 0)
+  - sort: Sort order - 'asc' or 'desc' (default: desc)
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response is an array", function() {
+    expect(res.getBody()).to.be.an('array');
+  });
+}

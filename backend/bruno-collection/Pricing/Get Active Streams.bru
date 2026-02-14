@@ -1,0 +1,19 @@
+meta {
+  name: Get Active Streams
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{base_url}}/api/pricing/ws/active-streams
+  body: none
+  auth: none
+}
+
+docs {
+  Get information about active WebSocket streams
+
+  Returns:
+  - active_streams: List of currently active price feed streams
+  - connection_count: Total number of WebSocket connections
+}

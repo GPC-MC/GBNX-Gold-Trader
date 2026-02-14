@@ -1,0 +1,50 @@
+meta {
+  name: Get LiveChart Data
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/livechart_data
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "trading_pairs": "xau_usd",
+    "timezone": "UTC",
+    "interval": 3600,
+    "sort": "desc",
+    "limit": 50,
+    "offset": 0
+  }
+}
+
+docs {
+  Get live chart data with technical indicators
+
+  Request body:
+  - trading_pairs: Trading pair (e.g., "xau_usd", "xag_usd")
+  - timezone: Timezone for the data (default: "UTC")
+  - interval: Time interval in seconds (default: 3600)
+  - sort: Sort order - "asc" or "desc" (default: "desc")
+  - limit: Number of data points (default: 50)
+  - offset: Offset for pagination (default: 0)
+
+  Returns OHLCV data with technical indicators:
+  - EMA_20: 20-period Exponential Moving Average
+  - Stochastic_D: Stochastic %D oscillator
+  - CCI: Commodity Channel Index
+  - ADX: Average Directional Index
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response has data array", function() {
+    expect(res.getBody()).to.have.property('data');
+  });
+}

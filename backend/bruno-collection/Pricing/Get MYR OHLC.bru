@@ -1,0 +1,22 @@
+meta {
+  name: Get MYR OHLC
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{base_url}}/api/pricing/ohlc/myr?interval=3600&limit=50&offset=0&sort=desc
+  body: none
+  auth: none
+}
+
+params:query {
+  interval: 3600
+  limit: 50
+  offset: 0
+  sort: desc
+}
+
+docs {
+  Get OHLC data for Malaysian Ringgit (USD/MYR)
+}

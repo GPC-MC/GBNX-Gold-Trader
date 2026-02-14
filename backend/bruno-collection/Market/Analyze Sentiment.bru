@@ -1,0 +1,50 @@
+meta {
+  name: Analyze Sentiment
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/analyze_sentiment
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "text": "Gold prices are soaring to new heights as investors seek safe haven assets amid economic uncertainty. The Federal Reserve's interest rate policies continue to support bullish sentiment in precious metals markets.",
+    "source": "test_input"
+  }
+}
+
+docs {
+  Analyze market sentiment of text using NLP
+
+  Request body:
+  - text: Text to analyze (minimum 10 characters)
+  - source: Source identifier (optional, default: "user_input")
+
+  Returns:
+  - result: Sentiment analysis results
+    - sentiment: "positive", "negative", or "neutral"
+    - score: Sentiment score from -1 to 1
+    - magnitude: Strength of sentiment (0 to 1)
+    - label: Trading label - "Bullish", "Bearish", or "Neutral"
+    - confidence: Confidence level - "High", "Medium", or "Low"
+  - analysis: Human-readable analysis text
+  - keywords: Extracted financial keywords
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response has result", function() {
+    expect(res.getBody()).to.have.property('result');
+  });
+
+  test("Result has sentiment label", function() {
+    expect(res.getBody().result).to.have.property('label');
+  });
+}

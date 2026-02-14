@@ -1,0 +1,28 @@
+meta {
+  name: Get Gold Price
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/transactions/gold-price
+  body: none
+  auth: none
+}
+
+docs {
+  Get current gold price from GoldAPI
+
+  Returns:
+  - price_usd_per_oz: Current gold price in USD per ounce
+}
+
+tests {
+  test("Status code is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("Response has price", function() {
+    expect(res.getBody()).to.have.property('price_usd_per_oz');
+  });
+}
