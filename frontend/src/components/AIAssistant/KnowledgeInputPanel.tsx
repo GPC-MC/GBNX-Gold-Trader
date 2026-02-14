@@ -174,7 +174,7 @@ const KnowledgeInputPanel: React.FC = () => {
                 </div>
                 <button
                   onClick={handleRemoveFile}
-                  className="p-2 rounded-xl text-gray-500 hover:text-rose-300 hover:bg-white/5 transition-colors duration-200"
+                  className="p-2 rounded-xl text-gray-500 hover:text-rose-300 hover:bg-gold-500/10 transition-colors duration-200"
                   title="Remove"
                 >
                   <X size={18} />

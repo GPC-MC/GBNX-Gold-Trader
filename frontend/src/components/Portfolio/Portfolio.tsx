@@ -137,7 +137,7 @@ const Portfolio: React.FC = () => {
                   'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all duration-200 border',
                   activeChart === tab.id
                     ? 'bg-gold-500/10 border-gold-500/30 text-gold-300 shadow-glow'
-                    : 'bg-white/0 border-transparent text-gray-400 hover:text-gray-100 hover:bg-white/5'
+                    : 'bg-white/0 border-transparent text-gray-400 hover:text-gray-100 hover:bg-gold-500/10'
                 )}
               >
                 <tab.icon size={16} />

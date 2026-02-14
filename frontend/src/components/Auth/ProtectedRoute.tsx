@@ -11,8 +11,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0B1220]">
-        <div className="text-[#D4AF37] text-xl">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center bg-ink-950">
+        <div className="rounded-md border border-gold-500/25 bg-ink-900/80 px-5 py-3 font-mono text-sm uppercase tracking-[0.18em] text-gold-300">
+          Loading Terminal...
+        </div>
       </div>
     );
   }

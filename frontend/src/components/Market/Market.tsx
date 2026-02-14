@@ -35,7 +35,7 @@ interface CommodityConfig {
 const commodityConfigs: Record<Commodity, CommodityConfig> = {
   gold: { name: 'GOLD', basePrice: 2345, color: '#D4AF37' },
   silver: { name: 'SILVER', basePrice: 28.5, color: '#C0C0C0' },
-  cobalt: { name: 'COBALT', basePrice: 34.2, color: '#6366F1' }
+  cobalt: { name: 'COBALT', basePrice: 34.2, color: '#4EA9FF' }
 };
 
 const Market: React.FC = () => {
@@ -390,7 +390,7 @@ const Market: React.FC = () => {
                           ? 'bg-rose-500/15 text-rose-300'
                           : latest && latest.Stochastic_D < 20
                             ? 'bg-emerald-500/15 text-emerald-300'
-                            : 'bg-white/10 text-gray-300'
+                            : 'bg-gold-500/15 text-gray-300'
                       )}
                     >
                       {latest && latest.Stochastic_D > 80 ? 'Overbought' : latest && latest.Stochastic_D < 20 ? 'Oversold' : 'Neutral'}
@@ -491,4 +491,3 @@ const Market: React.FC = () => {
 };
 
 export default Market;
-

@@ -241,7 +241,7 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({ activeVisualiza
         </div>
         <div className="rounded-xl border border-gold-500/10 bg-ink-800/55 p-3">
           <div className="text-xs font-semibold tracking-[0.18em] text-gray-500">STOCH %D</div>
-          <div className="text-violet-300 font-semibold mt-1">
+          <div className="text-terminal-cyan font-semibold mt-1">
             {latest ? latest.Stochastic_D.toFixed(1) : '—'}
           </div>
         </div>
@@ -492,7 +492,7 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({ activeVisualiza
                   href={article.source_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block rounded-lg p-1 -m-1 transition-colors duration-200 hover:bg-white/5"
+                  className="block rounded-lg p-1 -m-1 transition-colors duration-200 hover:bg-gold-500/10"
                 >
                   <h4 className="text-gray-100 font-semibold mb-2 hover:text-gold-300 transition-colors duration-200">
                     {article.title}
@@ -530,4 +530,3 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({ activeVisualiza
 };
 
 export default VisualizationPanel;
-

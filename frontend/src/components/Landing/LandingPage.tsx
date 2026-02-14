@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Activity, ArrowDownRight, ArrowUpRight, BarChart3, Bot, Shield, TrendingUp, Zap } from 'lucide-react';
-import avatarImage from '../../../assets/avatar.png';
+import {
+  Activity,
+  ArrowUpRight,
+  BarChart3,
+  Bot,
+  Shield,
+  TrendingUp,
+  Zap,
+  CandlestickChart,
+  Gauge,
+  Clock3
+} from 'lucide-react';
 import LoginModal from '../Auth/LoginModal';
+import styles from './LandingPage.module.scss';
 
 type IconComponent = React.ComponentType<{ className?: string; size?: number }>;
 
@@ -11,11 +21,11 @@ const FeatureCard: React.FC<{
   title: string;
   description: string;
 }> = ({ icon: Icon, title, description }) => (
-  <div className="rounded-2xl bg-[#0B1220]/70 border border-[#D4AF37]/15 p-6 transition-all duration-300 hover:border-[#D4AF37]/30 hover:bg-[#0B1220]/85">
-    <div className="inline-flex items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 p-3">
-      <Icon className="text-[#F2D27C]" size={20} />
+  <div className="terminal-panel rounded-lg p-5">
+    <div className="inline-flex items-center justify-center rounded-md border border-gold-500/25 bg-gold-500/10 p-2.5">
+      <Icon className="text-gold-300" size={18} />
     </div>
-    <h3 className="mt-4 text-lg font-semibold text-white">{title}</h3>
+    <h3 className="mt-4 text-base font-semibold text-gray-100">{title}</h3>
     <p className="mt-2 text-sm leading-relaxed text-gray-400">{description}</p>
   </div>
 );
@@ -25,16 +35,30 @@ const StepCard: React.FC<{
   title: string;
   description: string;
 }> = ({ index, title, description }) => (
-  <div className="relative rounded-2xl bg-[#0B1220]/60 border border-[#D4AF37]/12 p-6">
-    <div className="flex items-start gap-4">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/25 text-[#F2D27C] font-semibold">
+  <div className="terminal-panel rounded-lg p-5">
+    <div className="mb-4 flex items-center gap-3">
+      <div className="grid h-8 w-8 place-items-center rounded-md border border-gold-500/30 bg-gold-500/10 font-mono text-sm font-semibold text-gold-300">
         {index}
       </div>
-      <div>
-        <div className="text-base font-semibold text-white">{title}</div>
-        <div className="mt-1 text-sm leading-relaxed text-gray-400">{description}</div>
-      </div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500">Execution Flow</div>
     </div>
+    <h3 className="text-base font-semibold text-gray-100">{title}</h3>
+    <p className="mt-2 text-sm text-gray-400">{description}</p>
+  </div>
+);
+
+const TickerRow: React.FC<{ symbol: string; price: string; change: string; up?: boolean }> = ({
+  symbol,
+  price,
+  change,
+  up = true
+}) => (
+  <div className="terminal-ticker flex items-center justify-between gap-4">
+    <div className="flex items-center gap-3">
+      <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">{symbol}</span>
+      <span className="font-mono text-base font-semibold text-gray-100">{price}</span>
+    </div>
+    <span className={up ? 'font-mono text-xs text-emerald-300' : 'font-mono text-xs text-rose-300'}>{change}</span>
   </div>
 );
 
@@ -46,295 +70,178 @@ const LandingPage: React.FC = () => {
   const closeLoginModal = () => setIsLoginModalOpen(false);
 
   return (
-    <div className="min-h-screen text-white">
-      <div className="relative overflow-hidden">
-        {/* Hero */}
-        <section className="relative">
-          <div className="mx-auto max-w-7xl px-6 pt-16 pb-20 sm:pt-20 sm:pb-24 lg:pt-28 lg:pb-32">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold tracking-[0.18em] text-[#D4AF37]">
-                GOLD AI PLATFORM
-              </div>
-              <button
-                onClick={openLoginModal}
-                className="hidden sm:inline-flex items-center rounded-full border border-[#D4AF37]/25 bg-[#0B1220]/60 px-4 py-2 text-sm text-gray-200 transition hover:border-[#D4AF37]/45 hover:text-white"
-              >
-                Launch Platform
-              </button>
-            </div>
-
-            <div className="mt-12 grid items-center gap-12 lg:grid-cols-2">
-              <div className="order-2 lg:order-1">
-                <h1 className="text-4xl font-bold leading-[1.05] text-white sm:text-5xl lg:text-6xl">
-                  AI-powered gold intelligence for confident portfolio decisions.
-                </h1>
-                <p className="mt-4 text-sm font-semibold uppercase tracking-[0.2em] text-[#F2D27C]/80">
-                  Built for long-term gold investors, traders, and wealth managers.
-                </p>
-                <p className="mt-6 max-w-xl text-lg leading-relaxed text-gray-300">
-                  Track gold assets, analyze performance, and let AI surface real-time insights—built
-                  for clarity, control, and stability.
-                </p>
-
-                <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
-                  <button
-                    onClick={openLoginModal}
-                    className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#F2D27C] px-6 py-3 text-base font-semibold text-[#0B1220] shadow-[0_14px_40px_rgba(212,175,55,0.18)] transition-all duration-200 hover:shadow-[0_18px_55px_rgba(212,175,55,0.28)] hover:brightness-105 active:scale-[0.99]"
-                  >
-                    Launch Platform
-                  </button>
-                  <a
-                    href="#overview"
-                    className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-base font-medium text-gray-200 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
-                  >
-                    View Overview
-                  </a>
-                </div>
-
-                <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-xs text-gray-400">
-                  <div className="flex items-center gap-2">
-                    <Shield size={14} className="text-[#D4AF37]/80" />
-                    Security-first
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BarChart3 size={14} className="text-[#D4AF37]/80" />
-                    Transparent analytics
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp size={14} className="text-[#D4AF37]/80" />
-                    Built for stability
-                  </div>
-                </div>
-              </div>
-
-              <div className="order-1 flex justify-center lg:order-2">
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle,_rgba(212,175,55,0.24),_transparent_62%)] blur-2xl" />
-                  <div
-                    className="pointer-events-none absolute -inset-6 rounded-full border border-[#D4AF37]/15 border-dashed opacity-70 animate-spin"
-                    style={{ animationDuration: '32s' }}
-                  />
-                  <div
-                    className="pointer-events-none absolute -inset-10 rounded-full bg-[radial-gradient(circle,_rgba(242,210,124,0.12),_transparent_68%)] opacity-70 animate-pulse"
-                    style={{ animationDuration: '7s' }}
-                  />
-
-                  <div className="pointer-events-none absolute -left-10 top-10 hidden w-44 flex-col gap-3 rounded-2xl border border-[#D4AF37]/20 bg-[#0B1220]/85 p-3 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:flex">
-                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F2D27C]/70">
-                      <span>XAU 24h</span>
-                      <span className="text-emerald-300/90">+1.4%</span>
-                    </div>
-                    <svg viewBox="0 0 120 40" className="h-8 w-full">
-                      <defs>
-                        <linearGradient id="goldPulse" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#F2D27C" stopOpacity="0.05" />
-                          <stop offset="100%" stopColor="#F2D27C" stopOpacity="0.35" />
-                        </linearGradient>
-                      </defs>
-                      <path
-                        d="M2 30 C18 28 30 18 44 20 C58 22 70 14 86 12 C102 10 110 18 118 6"
-                        fill="none"
-                        stroke="#F2D27C"
-                        strokeWidth="2"
-                      />
-                      <path
-                        d="M2 30 C18 28 30 18 44 20 C58 22 70 14 86 12 C102 10 110 18 118 6 L118 40 L2 40 Z"
-                        fill="url(#goldPulse)"
-                      />
-                    </svg>
-                    <div className="flex items-center justify-between text-[11px] text-gray-400">
-                      <span>Spot</span>
-                      <span className="text-gray-200">$2,347</span>
-                    </div>
-                  </div>
-
-                  <div className="pointer-events-none absolute -right-12 top-16 hidden w-44 flex-col gap-3 rounded-2xl border border-[#D4AF37]/20 bg-[#0B1220]/85 p-3 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:flex">
-                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F2D27C]/70">
-                      <span>Signal flow</span>
-                      <span className="flex items-center gap-2 text-[10px] text-emerald-300/90">
-                        <span className="relative flex h-2 w-2">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70 opacity-70" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400/90" />
-                        </span>
-                        Live
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-200">
-                      <ArrowUpRight size={14} className="text-emerald-300" />
-                      Buy pressure +0.8
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] text-gray-400">
-                      <ArrowDownRight size={14} className="text-rose-300" />
-                      Sell pressure -0.3
-                    </div>
-                  </div>
-
-                  <div className="pointer-events-none absolute -left-8 bottom-0 hidden w-40 flex-col gap-3 rounded-2xl border border-[#D4AF37]/20 bg-[#0B1220]/85 p-3 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.35)] sm:flex">
-                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F2D27C]/70">
-                      <span>Risk lens</span>
-                      <Activity size={14} className="text-[#F2D27C]/70" />
-                    </div>
-                    <div className="flex items-end gap-1">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400/80" />
-                      <span className="h-3 w-2 rounded-full bg-[#F2D27C]/70" />
-                      <span className="h-5 w-2 rounded-full bg-[#F2D27C]/50" />
-                      <span className="h-4 w-2 rounded-full bg-amber-300/60" />
-                      <span className="h-3 w-2 rounded-full bg-amber-200/50" />
-                    </div>
-                    <div className="text-[11px] text-gray-300">Volatility 2.6% · Stable</div>
-                  </div>
-
-                  <div className="relative h-[320px] w-[320px] rounded-full bg-gradient-to-br from-[#D4AF37]/35 via-[#F2D27C]/10 to-transparent p-[1px] shadow-[0_0_90px_rgba(212,175,55,0.18)] sm:h-[360px] sm:w-[360px]">
-                    <div className="relative flex h-full w-full items-center justify-center rounded-full bg-[#0B1220]">
-                      <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_40%_30%,rgba(242,210,124,0.14),transparent_55%)]" />
-
-                      {/* Mascot */}
-                      <div className="relative">
-                        <img
-                          src={avatarImage}
-                          alt="Gold Platform AI Mascot"
-                          className="w-80 h-80 sm:w-96 sm:h-96 object-contain"
-                          style={{ filter: 'drop-shadow(0 0 28px rgba(212,175,55,0.45))' }}
-                        />
-                        <div className="pointer-events-none absolute -top-10 -left-12 rounded-full border border-[#D4AF37]/15 bg-[#0B1220]/60 p-2">
-                          <TrendingUp size={18} className="text-[#F2D27C]/70" />
-                        </div>
-                        <div className="pointer-events-none absolute -bottom-10 -right-12 rounded-full border border-[#D4AF37]/15 bg-[#0B1220]/60 p-2">
-                          <Shield size={18} className="text-[#F2D27C]/70" />
-                        </div>
-                        <div className="pointer-events-none absolute -right-16 top-10 rounded-full border border-[#D4AF37]/15 bg-[#0B1220]/60 p-2">
-                          <BarChart3 size={18} className="text-[#F2D27C]/70" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pointer-events-none absolute -left-6 -bottom-10 h-28 w-28 rounded-full bg-[radial-gradient(circle,_rgba(212,175,55,0.10),transparent_62%)] blur-xl" />
-                </div>
-              </div>
+    <div className={`${styles.page} min-h-screen text-white`}>
+      <div className="border-b border-gold-500/15 bg-ink-975/90">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.24em] text-gold-400">Live Trading Interface</div>
+            <div className="font-display text-2xl tracking-[0.16em] text-white">
+              GBNX <span className="text-gold-400">TERMINAL</span>
             </div>
           </div>
-        </section>
-
-        {/* Overview */}
-        <section id="overview" className="relative border-t border-[#D4AF37]/10">
-          <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
-            <div className="max-w-2xl">
-              <h2 className="text-2xl font-bold text-white sm:text-3xl">Designed for clarity and control</h2>
-              <p className="mt-3 text-sm leading-relaxed text-gray-400">
-                A refined dashboard experience that tracks gold performance, analyzes portfolio health, and
-                delivers AI-driven insights—without feature overload.
-              </p>
-            </div>
-
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <FeatureCard
-                icon={TrendingUp}
-                title="Track gold assets"
-                description="Monitor holdings and market moves in real time with a premium, dashboard-aligned view."
-              />
-              <FeatureCard
-                icon={BarChart3}
-                title="Analyze performance"
-                description="Understand trends, volatility, and portfolio behavior through clean analytics and charts."
-              />
-              <FeatureCard
-                icon={Bot}
-                title="AI-driven insights"
-                description="Let AI surface the signals that matter—highlighting opportunities and risks with context."
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* How it works */}
-        <section className="relative border-t border-[#D4AF37]/10">
-          <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div className="max-w-2xl">
-                <h2 className="text-2xl font-bold text-white sm:text-3xl">How it works</h2>
-                <p className="mt-3 text-sm leading-relaxed text-gray-400">
-                  A simple flow designed to get you from introduction to execution in seconds.
-                </p>
-              </div>
-              <button
-                onClick={openLoginModal}
-                className="inline-flex items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#0B1220]/60 px-5 py-2.5 text-sm font-semibold text-gray-100 transition hover:border-[#D4AF37]/45 hover:text-white"
-              >
-                Launch Platform
-              </button>
-            </div>
-
-            <div className="relative mt-10 grid gap-6 lg:grid-cols-3">
-              <div className="pointer-events-none absolute left-0 right-0 top-6 hidden h-px bg-[linear-gradient(to_right,transparent,rgba(212,175,55,0.22),transparent)] lg:block" />
-              <StepCard
-                index={1}
-                title="Launch the platform"
-                description="One click takes you into the live dashboard experience."
-              />
-              <StepCard
-                index={2}
-                title="View your portfolio"
-                description="See gold positions, performance, and market context in a familiar layout."
-              />
-              <StepCard
-                index={3}
-                title="Let AI surface insights"
-                description="Receive actionable signals with minimal noise—focused on stability and decision quality."
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Trust */}
-        <section className="relative border-t border-[#D4AF37]/10">
-          <div className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
-            <div className="max-w-2xl">
-              <h2 className="text-2xl font-bold text-white sm:text-3xl">Built for trust</h2>
-              <p className="mt-3 text-sm leading-relaxed text-gray-400">
-                Security, transparency, and professional usage are treated as defaults—not add-ons.
-              </p>
-            </div>
-
-            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <FeatureCard
-                icon={Shield}
-                title="Security-first"
-                description="Explore the dashboard in guest mode, with secure foundations ready when you enable authentication."
-              />
-              <FeatureCard
-                icon={BarChart3}
-                title="Transparent analytics"
-                description="Clear performance views help you understand what’s changing and why—without ambiguity."
-              />
-              <FeatureCard
-                icon={Zap}
-                title="Real-time insight"
-                description="Fast, responsive UI and AI assistance designed to support confident decisions."
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="relative border-t border-[#D4AF37]/10">
-          <div className="mx-auto max-w-7xl px-6 py-10">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-gray-400">© {year} Gold AI Platform</div>
-              <div className="flex items-center gap-6 text-sm text-gray-400">
-                <a className="transition hover:text-white" href="#overview">
-                  Overview
-                </a>
-                <button onClick={openLoginModal} className="transition hover:text-white">
-                  Launch
-                </button>
-              </div>
-            </div>
-          </div>
-        </footer>
+          <button
+            onClick={openLoginModal}
+            className="rounded-md border border-gold-500/30 bg-gold-500/15 px-4 py-2 font-mono text-xs font-semibold uppercase tracking-[0.15em] text-gold-200 transition hover:bg-gold-500/25"
+          >
+            Launch Workspace
+          </button>
+        </div>
       </div>
 
-      {/* Login Modal */}
+      <section className="mx-auto grid max-w-7xl gap-10 px-6 pb-16 pt-14 lg:grid-cols-[1.05fr_0.95fr]">
+        <div>
+          <div className="terminal-chip">Institutional Gold Desk</div>
+          <h1 className="mt-6 max-w-2xl text-4xl leading-tight text-white sm:text-5xl lg:text-6xl">
+            Terminal-grade analytics for gold traders and portfolio teams.
+          </h1>
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-gray-300">
+            Track spot flows, monitor account balances, and operate AI agents from a single command-view interface inspired by professional desks.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <button
+              onClick={openLoginModal}
+              className="rounded-md border border-gold-500/40 bg-gold-500/15 px-5 py-3 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-gold-200 transition hover:bg-gold-500/25"
+            >
+              Open Terminal
+            </button>
+            <a
+              href="#overview"
+              className="rounded-md border border-gold-500/20 bg-ink-900/75 px-5 py-3 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-gray-300 transition hover:border-gold-500/35 hover:text-gray-100"
+            >
+              View Modules
+            </a>
+          </div>
+
+          <div className="mt-10 grid gap-3 sm:grid-cols-3">
+            <div className={`${styles.infoPanel} rounded-md px-4 py-3`}>
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">Signals</div>
+              <div className="mt-2 flex items-center gap-2 text-sm text-emerald-300">
+                <Activity size={14} /> Live
+              </div>
+            </div>
+            <div className={`${styles.infoPanel} rounded-md px-4 py-3`}>
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">Latency</div>
+              <div className="mt-2 flex items-center gap-2 text-sm text-terminal-cyan">
+                <Gauge size={14} /> 42ms
+              </div>
+            </div>
+            <div className={`${styles.infoPanel} rounded-md px-4 py-3`}>
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-gray-500">Session</div>
+              <div className="mt-2 flex items-center gap-2 text-sm text-gold-300">
+                <Clock3 size={14} /> NY + LDN
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="terminal-frame rounded-lg p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="terminal-header">Market Monitor</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500">Realtime</div>
+          </div>
+
+          <div className="space-y-3">
+            <TickerRow symbol="XAUUSD" price="$2,389.74" change="+0.82%" />
+            <TickerRow symbol="XAGUSD" price="$31.43" change="+0.34%" />
+            <TickerRow symbol="DXY" price="103.21" change="-0.27%" up={false} />
+            <TickerRow symbol="US10Y" price="4.12%" change="-0.09%" up={false} />
+          </div>
+
+          <div className="my-5 terminal-divider" />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-md border border-gold-500/15 bg-ink-900/80 p-3">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500">Flow Bias</div>
+              <div className="mt-2 flex items-center gap-2 text-sm text-emerald-300">
+                <TrendingUp size={14} /> Safe-haven demand
+              </div>
+            </div>
+            <div className="rounded-md border border-gold-500/15 bg-ink-900/80 p-3">
+              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500">Volatility</div>
+              <div className="mt-2 flex items-center gap-2 text-sm text-gold-300">
+                <CandlestickChart size={14} /> Moderate
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-md border border-gold-500/20 bg-ink-900/85 px-4 py-3">
+            <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500">AI Prompt Queue</div>
+            <div className="flex items-start justify-between gap-3 text-sm text-gray-200">
+              <span>Summarize macro catalysts affecting XAU in the next 48h.</span>
+              <ArrowUpRight size={16} className="text-gold-300" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="overview" className="border-y border-gold-500/10 bg-ink-975/70">
+        <div className="mx-auto max-w-7xl px-6 py-14">
+          <div className="max-w-2xl">
+            <div className="terminal-header">Core Modules</div>
+            <h2 className="mt-3 text-3xl text-white">Built for execution clarity</h2>
+            <p className="mt-3 text-sm leading-relaxed text-gray-400">
+              Each workspace module is designed to mimic a desk workflow: monitor, decide, execute, and review.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <FeatureCard
+              icon={BarChart3}
+              title="Market Surveillance"
+              description="Track multi-asset signals and spot shifts in volatility, yields, and dollar strength."
+            />
+            <FeatureCard
+              icon={Bot}
+              title="Agent Workbench"
+              description="Use specialized AI agents for macro, technicals, risk, and sentiment."
+            />
+            <FeatureCard
+              icon={Shield}
+              title="Risk Controls"
+              description="Check balances, estimate exposure, and keep trade execution aligned with limits."
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-14">
+        <div className="mb-8 max-w-2xl">
+          <div className="terminal-header">Workflow</div>
+          <h2 className="mt-3 text-3xl text-white">From signal to order in three steps</h2>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <StepCard
+            index={1}
+            title="Scan"
+            description="Use market and news boards to identify directional pressure and catalyst windows."
+          />
+          <StepCard
+            index={2}
+            title="Validate"
+            description="Query AI agents for scenario analysis, risk sizing, and confidence checks."
+          />
+          <StepCard
+            index={3}
+            title="Execute"
+            description="Route to trade and balances screens with clear account-level context."
+          />
+        </div>
+      </section>
+
+      <footer className="border-t border-gold-500/15 bg-ink-975/90">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-6 text-xs font-mono uppercase tracking-[0.15em] text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+          <span>Copyright {year} GBNX Gold Trader</span>
+          <div className="flex items-center gap-4">
+            <span className="text-emerald-300">Feed Online</span>
+            <button onClick={openLoginModal} className="text-gold-300 transition hover:text-gold-200">
+              Launch Terminal
+            </button>
+          </div>
+        </div>
+      </footer>
+
       <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />
     </div>
   );

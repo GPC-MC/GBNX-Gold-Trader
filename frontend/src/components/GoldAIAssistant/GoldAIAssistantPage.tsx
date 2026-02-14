@@ -153,14 +153,14 @@ const GoldAIAssistantPage: React.FC = () => {
       {/* Left Sidebar */}
       <div 
         className={clsx(
-          "flex-shrink-0 bg-ink-900 border-r border-white/5 transition-all duration-300 flex flex-col",
+          "flex-shrink-0 bg-ink-900 border-r border-gold-500/15 transition-all duration-300 flex flex-col",
           isLeftSidebarOpen ? "w-[260px]" : "w-0 overflow-hidden"
         )}
       >
         <div className="p-3 flex-shrink-0">
           <Link
             to="/dashboard/ai-studio"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded-lg mb-2 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gold-500/10 rounded-lg mb-2 transition-colors"
           >
             <ArrowLeft size={16} />
             <span>Back to Studio</span>
@@ -168,7 +168,7 @@ const GoldAIAssistantPage: React.FC = () => {
           
           <button 
             onClick={handleNewChat}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg transition-colors text-left"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white bg-gold-500/10 hover:bg-gold-500/15 border border-gold-500/15 rounded-lg transition-colors text-left"
           >
             <Plus size={16} />
             <span>New chat</span>
@@ -177,20 +177,20 @@ const GoldAIAssistantPage: React.FC = () => {
 
         <div className="flex-1 overflow-y-auto px-3 py-2">
           <div className="text-xs font-semibold text-gray-500 mb-2 px-2">Today</div>
-          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors text-left truncate">
+          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gold-500/10 rounded-lg transition-colors text-left truncate">
             <span className="truncate">Gold price analysis</span>
           </button>
-          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors text-left truncate">
+          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gold-500/10 rounded-lg transition-colors text-left truncate">
             <span className="truncate">Risk management strategy</span>
           </button>
           
           <div className="text-xs font-semibold text-gray-500 mt-4 mb-2 px-2">Previous 7 Days</div>
-          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-lg transition-colors text-left truncate">
+          <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gold-500/10 rounded-lg transition-colors text-left truncate">
             <span className="truncate">Macro drivers update</span>
           </button>
         </div>
 
-        <div className="p-3 border-t border-white/5">
+        <div className="p-3 border-t border-gold-500/15">
           <div className="flex items-center gap-3 px-2 py-2">
             <div className="w-8 h-8 rounded-full bg-gold-500/20 flex items-center justify-center text-gold-300 text-xs font-bold border border-gold-500/20">
               JD
@@ -203,12 +203,12 @@ const GoldAIAssistantPage: React.FC = () => {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0 relative">
         {/* Header */}
-        <div className="h-14 flex items-center justify-between px-4 border-b border-white/5 bg-ink-950/50 backdrop-blur z-10">
+        <div className="h-14 flex items-center justify-between px-4 border-b border-gold-500/15 bg-ink-950/50 backdrop-blur z-10">
           <div className="flex items-center gap-2">
             {!isLeftSidebarOpen && (
               <button 
                 onClick={() => setIsLeftSidebarOpen(true)}
-                className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg"
+                className="p-2 text-gray-400 hover:text-white hover:bg-gold-500/10 rounded-lg"
               >
                 <Menu size={20} />
               </button>
@@ -219,7 +219,7 @@ const GoldAIAssistantPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg"
+              className="p-2 text-gray-400 hover:text-white hover:bg-gold-500/10 rounded-lg"
               title={isRightSidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
               {isRightSidebarOpen ? <PanelRightClose size={20} /> : <PanelRightOpen size={20} />}
@@ -245,7 +245,7 @@ const GoldAIAssistantPage: React.FC = () => {
                       className={clsx(
                         'mt-0.5 h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold border',
                         isUser
-                          ? 'bg-ink-800 border-white/10 text-gray-300'
+                          ? 'bg-ink-800 border-gold-500/20 text-gray-300'
                           : 'bg-gold-500/10 border-gold-500/20 text-gold-300'
                       )}
                     >
@@ -269,11 +269,11 @@ const GoldAIAssistantPage: React.FC = () => {
                             code: ({ children, className }) => {
                               const isInline = !className;
                               return isInline ? (
-                                <code className="px-1 py-0.5 rounded bg-ink-900 border border-white/10 text-gold-200 text-[13px] font-mono">
+                                <code className="px-1 py-0.5 rounded bg-ink-900 border border-gold-500/20 text-gold-200 text-[13px] font-mono">
                                   {children}
                                 </code>
                               ) : (
-                                <code className="block p-3 rounded bg-ink-900 border border-white/10 text-gold-200 text-[13px] font-mono whitespace-pre-wrap overflow-x-auto">
+                                <code className="block p-3 rounded bg-ink-900 border border-gold-500/20 text-gold-200 text-[13px] font-mono whitespace-pre-wrap overflow-x-auto">
                                   {children}
                                 </code>
                               );
@@ -328,10 +328,10 @@ const GoldAIAssistantPage: React.FC = () => {
         {/* Input Area */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-ink-950 via-ink-950 to-transparent pt-10 pb-6 px-4">
           <div className="max-w-3xl mx-auto">
-            <div className="relative flex items-end gap-2 bg-ink-800/80 backdrop-blur border border-white/10 rounded-2xl p-3 shadow-lg focus-within:border-gold-500/30 focus-within:ring-1 focus-within:ring-gold-500/30 transition-all">
+            <div className="relative flex items-end gap-2 bg-ink-800/80 backdrop-blur border border-gold-500/20 rounded-2xl p-3 shadow-lg focus-within:border-gold-500/30 focus-within:ring-1 focus-within:ring-gold-500/30 transition-all">
               <button
                 type="button"
-                className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+                className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-gold-500/10 transition-colors"
                 title="Attach file"
               >
                 <Paperclip size={20} />
@@ -360,7 +360,7 @@ const GoldAIAssistantPage: React.FC = () => {
                   'p-2 rounded-xl transition-all duration-200',
                   draft.trim() && !isTyping
                     ? 'bg-gold-500 text-ink-950 hover:bg-gold-400'
-                    : 'bg-white/5 text-gray-500 cursor-not-allowed'
+                    : 'bg-gold-500/10 text-gray-500 cursor-not-allowed'
                 )}
               >
                 <Send size={18} />
@@ -376,17 +376,17 @@ const GoldAIAssistantPage: React.FC = () => {
       {/* Right Sidebar - Preview Panel */}
       <div 
         className={clsx(
-          "flex-shrink-0 bg-ink-900 border-l border-white/5 transition-all duration-300 flex flex-col",
+          "flex-shrink-0 bg-ink-900 border-l border-gold-500/15 transition-all duration-300 flex flex-col",
           isRightSidebarOpen ? "w-[300px]" : "w-0 overflow-hidden"
         )}
       >
-        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+        <div className="p-4 border-b border-gold-500/15 flex items-center justify-between">
           <h3 className="font-semibold text-gray-200">Preview</h3>
           <div className="flex gap-1">
-            <button className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded">
+            <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gold-500/10 rounded">
               <Code size={16} />
             </button>
-            <button className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded">
+            <button className="p-1.5 text-gray-400 hover:text-white hover:bg-gold-500/10 rounded">
               <FileText size={16} />
             </button>
           </div>
@@ -394,7 +394,7 @@ const GoldAIAssistantPage: React.FC = () => {
         
         <div className="flex-1 overflow-y-auto p-4">
           <div className="flex flex-col items-center justify-center h-full text-gray-500 text-sm text-center">
-            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-xl bg-gold-500/10 flex items-center justify-center mb-3">
               <FileText size={24} className="opacity-50" />
             </div>
             <p>No content to preview</p>

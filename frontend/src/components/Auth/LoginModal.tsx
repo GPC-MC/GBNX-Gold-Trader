@@ -32,7 +32,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
         id: 'admin-user',
         name: 'Admin User',
         email: 'admin@goldtrader.ai',
-        picture: 'https://ui-avatars.com/api/?name=Admin+User&background=D4AF37&color=0B1220&bold=true'
+        picture: 'https://ui-avatars.com/api/?name=Admin+User&background=F3A712&color=0B1220&bold=true'
       };
       login(userData);
       setIsLoading(false);
@@ -64,7 +64,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       id: `user-${Date.now()}`,
       name: username,
       email: `${username}@goldtrader.ai`,
-      picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=D4AF37&color=0B1220&bold=true`
+      picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=F3A712&color=0B1220&bold=true`
     };
 
     setTimeout(() => {
@@ -130,18 +130,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md mx-4 bg-[#0B1220] border border-[#D4AF37]/20 rounded-2xl shadow-[0_0_60px_rgba(212,175,55,0.15)] overflow-hidden">
+      <div className="terminal-panel relative mx-4 w-full max-w-md overflow-hidden rounded-lg border border-gold-500/30">
         {/* Header */}
-        <div className="relative px-6 pt-6 pb-4 border-b border-[#D4AF37]/10">
+        <div className="relative border-b border-gold-500/15 px-6 pb-4 pt-6">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition rounded-lg hover:bg-white/5"
+            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white transition rounded-lg hover:bg-gold-500/10"
           >
             <X size={20} />
           </button>
 
           <div className="text-center">
-            <div className="text-sm font-semibold tracking-[0.18em] text-[#D4AF37] mb-2">
+            <div className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-400">
               GOLD AI PLATFORM
             </div>
             <h2 className="text-xl font-bold text-white">
@@ -161,17 +161,17 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           <button
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white font-medium transition hover:bg-white/10 hover:border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-md border border-gold-500/20 bg-ink-900/75 px-4 py-3 font-mono text-sm font-medium text-white transition hover:border-gold-500/35 hover:bg-ink-850/80 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Chrome size={20} className="text-[#D4AF37]" />
+            <Chrome size={20} className="text-gold-400" />
             Continue with Google
           </button>
 
           {/* Divider */}
           <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-[#D4AF37]/10" />
+            <div className="flex-1 h-px bg-gold-500/10" />
             <span className="text-xs text-gray-500 uppercase tracking-wider">or</span>
-            <div className="flex-1 h-px bg-[#D4AF37]/10" />
+            <div className="flex-1 h-px bg-gold-500/10" />
           </div>
 
           {/* Account Login/Signup Form */}
@@ -189,7 +189,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/50 transition"
+                  className="w-full rounded-md border border-gold-500/15 bg-ink-900/75 py-3 pl-10 pr-4 text-white placeholder-gray-500 transition focus:border-gold-500/45 focus:outline-none focus:ring-1 focus:ring-gold-500/35"
                 />
               </div>
             </div>
@@ -207,7 +207,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
                   required
-                  className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/50 transition"
+                  className="w-full rounded-md border border-gold-500/15 bg-ink-900/75 py-3 pl-10 pr-4 text-white placeholder-gray-500 transition focus:border-gold-500/45 focus:outline-none focus:ring-1 focus:ring-gold-500/35"
                 />
               </div>
             </div>
@@ -226,7 +226,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm password"
                     required
-                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-[#D4AF37]/50 focus:ring-1 focus:ring-[#D4AF37]/50 transition"
+                    className="w-full rounded-md border border-gold-500/15 bg-ink-900/75 py-3 pl-10 pr-4 text-white placeholder-gray-500 transition focus:border-gold-500/45 focus:outline-none focus:ring-1 focus:ring-gold-500/35"
                   />
                 </div>
               </div>
@@ -241,7 +241,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
             {/* Demo Hint (Login only) */}
             {mode === 'login' && (
-              <div className="mb-4 p-3 bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-lg text-[#F2D27C] text-sm">
+              <div className="mb-4 rounded-md border border-gold-500/25 bg-gold-500/10 p-3 text-sm text-gold-200">
                 Demo: Use <span className="font-semibold">admin</span> / <span className="font-semibold">admin</span> to login
               </div>
             )}
@@ -250,7 +250,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-gradient-to-r from-[#D4AF37] to-[#F2D27C] rounded-xl text-[#0B1220] font-semibold transition hover:brightness-105 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_30px_rgba(212,175,55,0.2)]"
+              className="w-full rounded-md border border-gold-500/35 bg-gold-500/20 py-3 font-mono font-semibold uppercase tracking-[0.1em] text-gold-100 transition hover:bg-gold-500/30 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isLoading ? 'Please wait...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
             </button>
@@ -263,7 +263,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             </span>
             <button
               onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-              className="text-[#D4AF37] hover:text-[#F2D27C] font-medium transition"
+              className="font-medium text-gold-400 transition hover:text-gold-300"
             >
               {mode === 'login' ? 'Sign Up' : 'Sign In'}
             </button>

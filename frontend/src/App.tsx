@@ -1,110 +1,45 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/Auth/ProtectedRoute';
-import DashboardLayout from './components/Layout/DashboardLayout';
-import DashboardHome from './components/Dashboard/DashboardHome';
-import Market from './components/Market/Market';
-import Portfolio from './components/Portfolio/Portfolio';
-import AIStudio from './components/AIStudio/AIStudio';
-import TradePage from './components/Transactions/TradePage';
-import BalancesPage from './components/Transactions/BalancesPage';
-import GoldAIAssistantPage from './components/GoldAIAssistant/GoldAIAssistantPage';
-import MarketAnalystAgentPage from './components/MarketAnalystAgent/MarketAnalystAgentPage';
-import TechnicalAnalystAgentPage from './components/TechnicalAnalystAgent/TechnicalAnalystAgentPage';
-import RiskManagerAgentPage from './components/RiskManagerAgent/RiskManagerAgentPage';
-import KnowledgeBaseAgentPage from './components/KnowledgeBaseAgent/KnowledgeBaseAgentPage';
-import SentimentAnalysisAgentPage from './components/SentimentAnalysisAgent/SentimentAnalysisAgentPage';
-import Profile from './components/Profile/Profile';
-import MarketNews from './components/News/MarketNews';
-import LandingPage from './components/Landing/LandingPage';
+import { router } from './app/router';
+import { useAppDispatch, useAppSelector } from './store/hooks';
+import { bootstrapRequested } from './store/slices/appSlice';
+import styles from './App.module.scss';
 
 function App() {
+  const dispatch = useAppDispatch();
+  const bootstrapping = useAppSelector((state) => state.app.bootstrapping);
+  const bootstrapError = useAppSelector((state) => state.app.error);
+
+  useEffect(() => {
+    dispatch(bootstrapRequested());
+  }, [dispatch]);
+
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-          <Route
-            path="/gold-ai-assistant"
-            element={
-              <ProtectedRoute>
-                <GoldAIAssistantPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/market-analyst-agent"
-            element={
-              <ProtectedRoute>
-                <MarketAnalystAgentPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/technical-analyst-agent"
-            element={
-              <ProtectedRoute>
-                <TechnicalAnalystAgentPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/risk-manager-agent"
-            element={
-              <ProtectedRoute>
-                <RiskManagerAgentPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/knowledge-base-agent"
-            element={
-              <ProtectedRoute>
-                <KnowledgeBaseAgentPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sentiment-analysis-agent"
-            element={
-              <ProtectedRoute>
-                <SentimentAnalysisAgentPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<DashboardHome />} />
-            <Route path="market" element={<Market />} />
-            <Route path="news" element={<MarketNews />} />
-            <Route path="portfolio" element={<Portfolio />} />
-            <Route path="trade" element={<TradePage />} />
-            <Route path="balances" element={<BalancesPage />} />
-            <Route path="ai-studio" element={<AIStudio />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
+      <div className={styles.appRoot}>
+        <RouterProvider router={router} />
 
-          {/* Backwards-compatible redirects */}
-          <Route path="/market" element={<Navigate to="/dashboard/market" replace />} />
-          <Route path="/news" element={<Navigate to="/dashboard/news" replace />} />
-          <Route path="/portfolio" element={<Navigate to="/dashboard/portfolio" replace />} />
-          <Route path="/trade" element={<Navigate to="/dashboard/trade" replace />} />
-          <Route path="/balances" element={<Navigate to="/dashboard/balances" replace />} />
-          <Route path="/ai-studio" element={<Navigate to="/dashboard/ai-studio" replace />} />
-          <Route path="/dashboard/ai-studio/gold-ai-assistant" element={<Navigate to="/gold-ai-assistant" replace />} />
-          <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
+        {bootstrapping && (
+          <div className={styles.bootstrapOverlay} role="status" aria-live="polite">
+            <div className={styles.bootstrapPanel}>
+              <p className={styles.bootstrapTitle}>Application Init</p>
+              <p className={styles.bootstrapText}>Bootstrapping trading workspace...</p>
+              <p className={styles.bootstrapSubtle}>Redux Toolkit + redux-saga flow active</p>
+            </div>
+          </div>
+        )}
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+        {bootstrapError && !bootstrapping && (
+          <div className={styles.bootstrapOverlay} role="alert" aria-live="assertive">
+            <div className={styles.bootstrapPanel}>
+              <p className={styles.bootstrapTitle}>Bootstrap Error</p>
+              <p className={styles.bootstrapText}>{bootstrapError}</p>
+              <p className={styles.bootstrapSubtle}>Reload to retry initialization</p>
+            </div>
+          </div>
+        )}
+      </div>
     </AuthProvider>
   );
 }

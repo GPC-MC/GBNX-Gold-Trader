@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
     "clsx": "^2.1.1",
     "lucide-react": "^0.344.0",
     "plotly.js": "^3.1.0",
@@ -18,8 +19,11 @@
     "react-is": "^19.1.1",
     "react-markdown": "^10.1.0",
     "react-plotly.js": "^2.6.0",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^7.8.1",
-    "recharts": "^3.1.2"
+    "recharts": "^3.1.2",
+    "redux-saga": "^1.4.2",
+    "sass": "^1.97.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

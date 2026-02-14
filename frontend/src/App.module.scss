@@ -1,0 +1,48 @@
+@use './styles/mixins' as mixins;
+
+.appRoot {
+  min-height: 100vh;
+  position: relative;
+}
+
+.bootstrapOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 5, 8, 0.68);
+  backdrop-filter: blur(4rem);
+}
+
+.bootstrapPanel {
+  @include mixins.terminal-panel;
+  width: min(560rem, calc(100% - 40rem));
+  border-radius: 12rem;
+  padding: 18rem 20rem;
+}
+
+.bootstrapTitle {
+  margin: 0;
+  color: #ffd680;
+  font-size: 12rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.bootstrapText {
+  margin: 8rem 0 0;
+  color: #dce2ea;
+  font-size: 15rem;
+  letter-spacing: 0.05em;
+}
+
+.bootstrapSubtle {
+  margin: 6rem 0 0;
+  color: #7f91a4;
+  font-size: 12rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

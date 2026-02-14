@@ -184,7 +184,7 @@ const AIAssistant: React.FC = () => {
               onClick={() => handleQuickAction('chart')}
               className="inline-flex items-center gap-2 rounded-xl border border-gold-500/10 bg-ink-800/55 px-3 py-2 transition-all duration-200 hover:bg-ink-800/75 hover:border-gold-500/20"
             >
-              <BarChart3 size={16} className="text-violet-300" />
+              <BarChart3 size={16} className="text-terminal-cyan" />
               <span className="text-sm font-semibold text-gray-200">Chart Analysis</span>
             </button>
             <button
@@ -209,10 +209,10 @@ const AIAssistant: React.FC = () => {
               className="w-full rounded-xl bg-ink-800/55 border border-gold-500/15 px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-gold-500/35 focus:ring-2 focus:ring-gold-500/15"
             />
           </div>
-          <button className="p-3 rounded-xl text-gray-500 hover:text-gold-300 hover:bg-white/5 transition-colors duration-200" title="Voice">
+          <button className="p-3 rounded-xl text-gray-500 hover:text-gold-300 hover:bg-gold-500/10 transition-colors duration-200" title="Voice">
             <Mic size={20} />
           </button>
-          <button className="p-3 rounded-xl text-gray-500 hover:text-gold-300 hover:bg-white/5 transition-colors duration-200" title="Attach">
+          <button className="p-3 rounded-xl text-gray-500 hover:text-gold-300 hover:bg-gold-500/10 transition-colors duration-200" title="Attach">
             <Paperclip size={20} />
           </button>
           <button
@@ -240,7 +240,7 @@ const AIAssistant: React.FC = () => {
               'flex-1 px-6 py-4 text-sm font-semibold transition-all duration-200',
               activeTab === 'insights'
                 ? 'bg-gold-500/10 text-gold-300'
-                : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'
+                : 'text-gray-400 hover:text-gray-100 hover:bg-gold-500/10'
             )}
           >
             <div className="flex items-center justify-center gap-2">
@@ -254,7 +254,7 @@ const AIAssistant: React.FC = () => {
               'flex-1 px-6 py-4 text-sm font-semibold transition-all duration-200',
               activeTab === 'knowledge'
                 ? 'bg-gold-500/10 text-gold-300'
-                : 'text-gray-400 hover:text-gray-100 hover:bg-white/5'
+                : 'text-gray-400 hover:text-gray-100 hover:bg-gold-500/10'
             )}
           >
             <div className="flex items-center justify-center gap-2">
@@ -274,4 +274,3 @@ const AIAssistant: React.FC = () => {
 };
 
 export default AIAssistant;
-

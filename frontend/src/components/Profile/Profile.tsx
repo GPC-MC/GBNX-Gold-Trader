@@ -10,7 +10,7 @@ const Profile: React.FC = () => {
     { label: 'Total Trades', value: '247', icon: TrendingUp, color: 'text-sky-300' },
     { label: 'Win Rate', value: '68%', icon: Target, color: 'text-emerald-300' },
     { label: 'Total Profit', value: '$12,450', icon: Award, color: 'text-gold-300' },
-    { label: 'Days Active', value: '89', icon: Calendar, color: 'text-violet-300' }
+    { label: 'Days Active', value: '89', icon: Calendar, color: 'text-terminal-cyan' }
   ];
 
   const achievements = [
@@ -99,7 +99,7 @@ const Profile: React.FC = () => {
                       'w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold border',
                       achievement.earned
                         ? 'bg-gold-500/15 border-gold-500/25 text-gold-300'
-                        : 'bg-white/5 border-white/10 text-gray-400'
+                        : 'bg-gold-500/10 border-gold-500/20 text-gray-400'
                     )}
                   >
                     {achievement.earned ? '✓' : '•'}

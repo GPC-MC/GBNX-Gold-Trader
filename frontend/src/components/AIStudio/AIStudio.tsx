@@ -1,6 +1,7 @@
 import React from 'react';
 import { Activity, BarChart3, BookOpen, Bot, ChevronRight, ShieldAlert, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { media } from '../../helpers/media';
 
 const AIStudio: React.FC = () => {
   const agents: AgentCard[] = [
@@ -76,7 +77,7 @@ const AIStudio: React.FC = () => {
                   `}
                 >
                   <img
-                    src={`/avatars/${encodeURIComponent(avatarFile)}`}
+                    src={media(`avatars/${encodeURIComponent(avatarFile)}`)}
                     alt={`${label} avatar`}
                     loading="lazy"
                     className="h-full w-full rounded-full object-cover"
