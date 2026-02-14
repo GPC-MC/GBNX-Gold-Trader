@@ -9,3 +9,14 @@ backend/dulcet-order-476509-q4-7b210ba5c8a4.json
 .claude/.settings.json
 .vercel
 frontend/.env
+backend/src/pydantic_agent/__pycache__/agent_registry.cpython-311.pyc
+backend/src/pydantic_agent/__pycache__/agent_registry.cpython-312.pyc
+backend/src/pydantic_agent/__pycache__/agent_toolsets.cpython-311.pyc
+backend/src/pydantic_agent/__pycache__/agent_toolsets.cpython-312.pyc
+backend/src/pydantic_agent/__pycache__/all_tools.cpython-311.pyc
+backend/src/pydantic_agent/__pycache__/available_agents.cpython-311.pyc
+backend/src/pydantic_agent/__pycache__/base.cpython-311.pyc
+backend/src/pydantic_agent/__pycache__/general_chat.cpython-311.pyc
+backend/src/pydantic_agent/__pycache__/general_chat.cpython-312.pyc
+backend/src/pydantic_agent/__pycache__/mkt_tools.cpython-311.pyc
+backend/src/pydantic_agent/__pycache__/mkt_tools.cpython-312.pyc
