@@ -29,6 +29,11 @@ from src.search_service.news_api_search import NewsAPISearchProvider
 from src.search_service.tavily_search import TavilySearchProvider
 from src.search_service.perplexity_search import PerplexitySearchProvider
 from src.search_service.unified_search import UnifiedSearchService
+from src.search_service.news_search_summarize import (
+    NewsSentimentAnalyzer,
+    NewsSentimentResult,
+    SentimentOutput,
+)
 
 __all__ = [
     "BaseSearchProvider",
@@ -39,6 +44,9 @@ __all__ = [
     "TavilySearchProvider",
     "PerplexitySearchProvider",
     "UnifiedSearchService",
+    "NewsSentimentAnalyzer",
+    "NewsSentimentResult",
+    "SentimentOutput",
     # Content truncation utilities
     "truncate_content",
     "truncate_combined_content",

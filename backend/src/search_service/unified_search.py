@@ -143,6 +143,20 @@ class UnifiedSearchService:
 
         return perplexity_response
 
+    async def search_raw_news(
+        self,
+        query: str,
+        max_results: int = 10,
+        **kwargs
+    ) -> SearchResponse:
+        """
+        Fetch raw news search results through the unified service.
+
+        This intentionally skips LLM summarization and returns provider results
+        directly, so downstream modules can perform their own post-processing.
+        """
+        return await self.perplexity.search(query=query, max_results=max_results, **kwargs)
+
 
         # import pdb; pdb.set_trace()
         # return {

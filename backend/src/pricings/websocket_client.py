@@ -65,24 +65,76 @@ class PriceWebSocketClient:
             print(f"Message: {message[:500]}")
             raise
 
-        # Validate required fields
-        if "bid" not in data or "ask" not in data:
-            print(f"Missing required fields in message: {data.keys()}")
-            raise ValueError(f"Message missing bid or ask fields")
+        # Handle wrapped format with 'values' array
+        if "values" in data and isinstance(data["values"], list):
+            if not data["values"]:
+                raise ValueError("Empty values array in message")
 
-        # Extract only the necessary fields to keep response size manageable
-        try:
+            # Get the latest tick (last item in array)
+            latest_tick = data["values"][-1]
+            print(f"Extracted latest tick from values array: {latest_tick}")
+
+            # Map field names: bid_price -> bid, ask_price -> ask, date_time -> timestamp
+            bid = latest_tick.get("bid_price") or latest_tick.get("bid")
+            ask = latest_tick.get("ask_price") or latest_tick.get("ask")
+            timestamp_str = latest_tick.get("date_time") or latest_tick.get("timestamp")
+
+            if bid is None or ask is None:
+                print(f"Missing bid/ask in tick: {latest_tick.keys()}")
+                raise ValueError("Missing bid or ask price in tick data")
+
+            # Parse timestamp
+            if timestamp_str:
+                try:
+                    # Handle format: "2024-12-26 08:10:00.110"
+                    timestamp = datetime.fromisoformat(timestamp_str.replace(" ", "T"))
+                except (ValueError, AttributeError):
+                    timestamp = datetime.now()
+            else:
+                timestamp = datetime.now()
+
+            spread = float(ask) - float(bid)
+
+            return TickData(
+                symbol=latest_tick.get("symbol", self.symbol.value),
+                bid=float(bid),
+                ask=float(ask),
+                timestamp=timestamp,
+                spread=spread,
+            )
+
+        # Handle direct format (legacy)
+        elif "bid" in data or "ask" in data or "bid_price" in data or "ask_price" in data:
+            bid = data.get("bid_price") or data.get("bid")
+            ask = data.get("ask_price") or data.get("ask")
+
+            if bid is None or ask is None:
+                print(f"Missing required fields in message: {data.keys()}")
+                raise ValueError(f"Message missing bid or ask fields")
+
+            timestamp_str = data.get("date_time") or data.get("timestamp")
+            if timestamp_str:
+                try:
+                    timestamp = datetime.fromisoformat(timestamp_str.replace(" ", "T"))
+                except (ValueError, AttributeError):
+                    timestamp = datetime.now()
+            else:
+                timestamp = datetime.now()
+
+            spread = data.get("spread")
+            if spread is None:
+                spread = float(ask) - float(bid)
+
             return TickData(
                 symbol=data.get("symbol", self.symbol.value),
-                bid=float(data["bid"]),
-                ask=float(data["ask"]),
-                timestamp=datetime.fromisoformat(data["timestamp"]) if "timestamp" in data else datetime.now(),
-                spread=float(data["spread"]) if data.get("spread") is not None else None,
+                bid=float(bid),
+                ask=float(ask),
+                timestamp=timestamp,
+                spread=float(spread) if spread is not None else None,
             )
-        except (ValueError, KeyError, TypeError) as e:
-            print(f"Failed to create TickData from message: {e}")
-            print(f"Data: {data}")
-            raise
+        else:
+            print(f"Unknown message format. Keys: {data.keys()}")
+            raise ValueError(f"Unknown message format: {data.keys()}")
 
     async def listen(self, callback: Callable[[TickData], Awaitable[None]]):
         if not self.websocket:
