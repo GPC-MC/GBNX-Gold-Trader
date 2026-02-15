@@ -67,7 +67,7 @@ const MarketNews: React.FC = () => {
       }
 
       const signals = await fetchNewsSignals({
-        query: 'latest news about gold',
+        query: 'latest news which can have impact on gold and silver market incudling economy, politics, and geopolitical events',
         maxResults: 10,
         maxArticles: 10,
         recency: 'week',
