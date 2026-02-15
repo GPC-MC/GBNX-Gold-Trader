@@ -19,9 +19,9 @@ from pydantic_ai import Agent
 
 
 class NewsSearchSummarize(BaseModel):
-    reasoning: str
-    sentiment: str
-    summary: str
+    reasoning: str - why bearish or bullish 
+    sentiment: str - Bearish Bullish Neutral
+    summary: str - 1-2 sentences
     url: str
 
 
@@ -33,7 +33,7 @@ class AISearchService:
         self.service = UnifiedSearchService()
         self.agent = BaseAgent(
             llm=llm,
-            model="gpt-4o-mini",
+            model="openai:gpt-4o-mini",
             base_url=app_config.LITE_LLM_ENDPOINT_URL,
             api_key=app_config.LITE_LLM_API_KEY,
         )
