@@ -7,6 +7,8 @@ import {
   type NewsSignalArticle,
 } from '../../services/newsApi';
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 const getPublishedLabel = (publishedAt?: string) => {
   if (!publishedAt) {
     return 'Recent';
@@ -32,10 +34,29 @@ const MarketNews: React.FC = () => {
   const [news, setNews] = useState<NewsSignalArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [refreshingNews, setRefreshingNews] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   useEffect(() => {
     fetchNews();
   }, []);
+
+  useEffect(() => {
+    if (!newsLoading && !refreshingNews) {
+      return;
+    }
+
+    setLoadingProgress(0);
+    let progress = 0;
+    const interval = window.setInterval(() => {
+      const step = Math.floor(Math.random() * 8) + 2; // 2 -> 9
+      progress = Math.min(progress + step, 92);
+      setLoadingProgress(progress);
+    }, 170);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [newsLoading, refreshingNews]);
 
   const fetchNews = async (isRefresh = false) => {
     try {
@@ -56,6 +77,8 @@ const MarketNews: React.FC = () => {
       console.error('Error fetching news:', err);
       setNews(fallbackNewsSignals);
     } finally {
+      setLoadingProgress(100);
+      await wait(180);
       setNewsLoading(false);
       setRefreshingNews(false);
     }
@@ -146,8 +169,19 @@ const MarketNews: React.FC = () => {
 
       {newsLoading ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mb-4"></div>
-          <div className="text-gold-500/50 animate-pulse">Analyzing Market Flows...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mb-6"></div>
+          <div className="w-full max-w-md">
+            <div className="mb-2 flex items-center justify-between text-xs tracking-[0.16em] uppercase">
+              <span className="text-gold-400/80">Analyzing Market Flows</span>
+              <span className="text-gold-300 font-semibold">{loadingProgress}%</span>
+            </div>
+            <div className="h-2 rounded-full border border-gold-500/20 bg-ink-900/60 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-gold-600 via-gold-400 to-amber-300 transition-all duration-200"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+          </div>
         </div>
       ) : (
         <div className="space-y-12">
