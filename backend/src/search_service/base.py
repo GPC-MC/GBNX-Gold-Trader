@@ -8,46 +8,64 @@ from pydantic import BaseModel, HttpUrl, Field
 from datetime import datetime
 
 
-# Content truncation constants
-MAX_CONTENT_PER_RESULT = 5000  # Max characters per result
-MAX_TOTAL_CONTENT = 25000  # Max total characters for all results combined
-MAX_RESULTS_FOR_SUMMARY = 10  # Max number of results to include in summary
+# Content truncation limits (in characters) to prevent LLM context overflow
+MAX_CONTENT_PER_RESULT = 2000  # Max chars per individual result content
+MAX_TOTAL_CONTENT = 25000  # Max chars for combined content sent to LLM
+MAX_RESULTS_FOR_SUMMARY = 30  # Max number of results to include in summary
 
 
-def truncate_content(content: str, max_length: int = MAX_CONTENT_PER_RESULT) -> str:
+def truncate_content(text: str, max_chars: int = MAX_CONTENT_PER_RESULT) -> str:
     """
-    Truncate content to a maximum length, adding ellipsis if truncated
-
+    Truncate text to max_chars, trying to break at sentence boundary.
+    
     Args:
-        content: Content string to truncate
-        max_length: Maximum length of content
-
+        text: Text to truncate
+        max_chars: Maximum characters to keep
+        
     Returns:
-        Truncated content string
+        Truncated text with ellipsis if truncated
     """
-    if not content:
-        return ""
-    if len(content) <= max_length:
-        return content
-    return content[:max_length] + "..."
+    if not text or len(text) <= max_chars:
+        return text
+    
+    # Try to break at last sentence within limit
+    truncated = text[:max_chars]
+    
+    # Find last sentence ending (. ! ?)
+    for sep in ['. ', '! ', '? ', '\n\n', '\n']:
+        last_sep = truncated.rfind(sep)
+        if last_sep > max_chars * 0.6:  # Only if we keep at least 60% of content
+            return truncated[:last_sep + 1].strip() + "..."
+    
+    # Fallback: break at last space
+    last_space = truncated.rfind(' ')
+    if last_space > max_chars * 0.8:
+        return truncated[:last_space].strip() + "..."
+    
+    return truncated.strip() + "..."
 
 
-def truncate_combined_content(content: str, max_length: int = MAX_TOTAL_CONTENT) -> str:
+def truncate_combined_content(content: str, max_chars: int = MAX_TOTAL_CONTENT) -> str:
     """
-    Truncate combined content to a maximum length
-
+    Truncate combined content for LLM, preserving structure.
+    
     Args:
-        content: Combined content string to truncate
-        max_length: Maximum length of combined content
-
+        content: Combined content string
+        max_chars: Maximum total characters
+        
     Returns:
-        Truncated content string
+        Truncated content
     """
-    if not content:
-        return ""
-    if len(content) <= max_length:
+    if not content or len(content) <= max_chars:
         return content
-    return content[:max_length] + "\n\n... [Content truncated for brevity]"
+    
+    # Try to break at result separator
+    truncated = content[:max_chars]
+    last_sep = truncated.rfind('---')
+    if last_sep > max_chars * 0.7:
+        return truncated[:last_sep + 3] + "\n\n[Content truncated for brevity...]"
+    
+    return truncated + "\n\n[Content truncated for brevity...]"
 
 
 class ImageResult(BaseModel):
@@ -78,12 +96,13 @@ class SearchResponse(BaseModel):
     query: str
     provider: str
     results: List[SearchResult] = Field(default_factory=list)
-    # images: List[ImageResult] = Field(default_factory=list)
+    images: List[ImageResult] = Field(default_factory=list)
     total_results: Optional[int] = None
     answer: Optional[str] = None
     follow_up_questions: Optional[List[str]] = None
     response_time: Optional[float] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    string_result: Optional[str] = None
 
 
 class BaseSearchProvider(ABC):
@@ -99,46 +118,6 @@ class BaseSearchProvider(ABC):
         """
         self.api_key = api_key
         self.config = kwargs
-
-    @abstractmethod
-    async def search(
-        self,
-        query: str,
-        max_results: int = 10,
-        **kwargs
-    ) -> SearchResponse:
-        """
-        Perform a search query
-
-        Args:
-            query: Search query string
-            max_results: Maximum number of results to return
-            **kwargs: Provider-specific search parameters
-
-        Returns:
-            SearchResponse object containing results
-        """
-        pass
-
-    @abstractmethod
-    def search_sync(
-        self,
-        query: str,
-        max_results: int = 10,
-        **kwargs
-    ) -> SearchResponse:
-        """
-        Synchronous version of search
-
-        Args:
-            query: Search query string
-            max_results: Maximum number of results to return
-            **kwargs: Provider-specific search parameters
-
-        Returns:
-            SearchResponse object containing results
-        """
-        pass
 
     def format_results(self, response: SearchResponse) -> str:
         """

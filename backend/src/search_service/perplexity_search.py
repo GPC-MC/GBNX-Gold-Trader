@@ -8,8 +8,19 @@ web search results with ranked results, domain filtering, and content extraction
 import os
 import httpx
 import asyncio
+import re
 from typing import List, Optional, Literal, Union
 from datetime import datetime
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# Date format validation regex for Perplexity API (%m/%d/%Y)
+DATE_FORMAT_REGEX = r'^(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])/\d{4}$'
+
 
 from src.search_service.base import (
     BaseSearchProvider,
@@ -41,10 +52,15 @@ class PerplexitySearchProvider(BaseSearchProvider):
         country: Optional[str] = None,
         search_language_filter: Optional[List[str]] = None,
         search_domain_filter: Optional[List[str]] = None,
+        search_recency_filter: Optional[Literal["day", "week", "month", "year"]] = None,
+        search_after_date_filter: Optional[str] = None,
+        search_before_date_filter: Optional[str] = None,
+        last_updated_after_filter: Optional[str] = None,
+        last_updated_before_filter: Optional[str] = None,
         enable_image_scraping: bool = True,
         image_scraping_timeout: float = 5.0,
         image_scraping_max_concurrent: int = 5,
-        **kwargs
+        **kwargs,
     ):
         """
         Initialize Perplexity Search provider
@@ -57,6 +73,11 @@ class PerplexitySearchProvider(BaseSearchProvider):
             country: ISO 3166-1 alpha-2 country code (e.g., "US", "GB", "DE")
             search_language_filter: List of ISO 639-1 language codes (max 10)
             search_domain_filter: List of domains to include/exclude (use "-" prefix to exclude)
+            search_recency_filter: Filter by recency - "day", "week", "month", or "year" (default None)
+            search_after_date_filter: Only include content published after this date (format: "%m/%d/%Y")
+            search_before_date_filter: Only include content published before this date (format: "%m/%d/%Y")
+            last_updated_after_filter: Only include content updated after this date (format: "%m/%d/%Y")
+            last_updated_before_filter: Only include content updated before this date (format: "%m/%d/%Y")
             enable_image_scraping: Enable image scraping from result URLs (default True)
             image_scraping_timeout: Timeout for image scraping requests in seconds (default 5.0)
             image_scraping_max_concurrent: Max concurrent image scraping requests (default 5)
@@ -73,6 +94,13 @@ class PerplexitySearchProvider(BaseSearchProvider):
         self.search_language_filter = search_language_filter or []
         self.search_domain_filter = search_domain_filter or []
 
+        # Date and time filters
+        self.search_recency_filter = search_recency_filter
+        self.search_after_date_filter = self._validate_date_format(search_after_date_filter)
+        self.search_before_date_filter = self._validate_date_format(search_before_date_filter)
+        self.last_updated_after_filter = self._validate_date_format(last_updated_after_filter)
+        self.last_updated_before_filter = self._validate_date_format(last_updated_before_filter)
+
         # Image scraping configuration
         self.enable_image_scraping = enable_image_scraping
         self.image_scraping_timeout = image_scraping_timeout
@@ -83,10 +111,38 @@ class PerplexitySearchProvider(BaseSearchProvider):
             self.image_scraper = ImageScraper(timeout=self.image_scraping_timeout)
         else:
             self.image_scraper = None
+        
+        self.llm = ChatOpenAI(model="gpt-4.1-nano",
+        base_url=os.getenv("LITE_LLM_ENDPOINT_URL"),
+        api_key=os.getenv("LITE_LLM_API_KEY"))
 
     @property
     def provider_name(self) -> str:
         return "perplexity"
+
+    def _validate_date_format(self, date_str: Optional[str]) -> Optional[str]:
+        """
+        Validate date format for Perplexity API (%m/%d/%Y)
+
+        Args:
+            date_str: Date string to validate
+
+        Returns:
+            Validated date string or None
+
+        Raises:
+            ValueError: If date format is invalid
+        """
+        if date_str is None:
+            return None
+
+        if not re.match(DATE_FORMAT_REGEX, date_str):
+            raise ValueError(
+                f"Invalid date format: '{date_str}'. "
+                f"Expected format: %m/%d/%Y (e.g., '3/1/2025' or '03/01/2025')"
+            )
+
+        return date_str
 
     def _get_client_headers(self) -> dict:
         """Get headers for HTTP client"""
@@ -102,6 +158,11 @@ class PerplexitySearchProvider(BaseSearchProvider):
         country: Optional[str] = None,
         search_language_filter: Optional[List[str]] = None,
         search_domain_filter: Optional[List[str]] = None,
+        search_recency_filter: Optional[Literal["day", "week", "month", "year"]] = None,
+        search_after_date_filter: Optional[str] = None,
+        search_before_date_filter: Optional[str] = None,
+        last_updated_after_filter: Optional[str] = None,
+        last_updated_before_filter: Optional[str] = None,
         max_tokens: Optional[int] = None,
         max_tokens_per_page: Optional[int] = None,
     ) -> dict:
@@ -128,12 +189,41 @@ class PerplexitySearchProvider(BaseSearchProvider):
         if effective_domain_filter:
             body["search_domain_filter"] = effective_domain_filter[:20]
 
+        # Add optional search recency filter
+        effective_recency_filter = search_recency_filter or self.search_recency_filter
+        if effective_recency_filter:
+            body["search_recency_filter"] = effective_recency_filter
+
+        # Add optional publication date filters (validate format)
+        effective_after_date = self._validate_date_format(
+            search_after_date_filter or self.search_after_date_filter
+        )
+        if effective_after_date:
+            body["search_after_date_filter"] = effective_after_date
+
+        effective_before_date = self._validate_date_format(
+            search_before_date_filter or self.search_before_date_filter
+        )
+        if effective_before_date:
+            body["search_before_date_filter"] = effective_before_date
+
+        # Add optional last updated date filters (validate format)
+        effective_updated_after = self._validate_date_format(
+            last_updated_after_filter or self.last_updated_after_filter
+        )
+        if effective_updated_after:
+            body["last_updated_after_filter"] = effective_updated_after
+
+        effective_updated_before = self._validate_date_format(
+            last_updated_before_filter or self.last_updated_before_filter
+        )
+        if effective_updated_before:
+            body["last_updated_before_filter"] = effective_updated_before
+
         return body
 
     async def _parse_perplexity_response(
-        self,
-        query: Union[str, List[str]],
-        raw_response: dict
+        self, query: Union[str, List[str]], raw_response: dict
     ) -> SearchResponse:
         """Parse raw Perplexity response into SearchResponse model"""
         results = []
@@ -161,8 +251,7 @@ class PerplexitySearchProvider(BaseSearchProvider):
 
                 # Batch scrape images concurrently
                 image_urls = await self.image_scraper.scrape_images_batch(
-                    urls,
-                    max_concurrent=self.image_scraping_max_concurrent
+                    urls, max_concurrent=self.image_scraping_max_concurrent
                 )
 
                 # Assign images to results
@@ -184,8 +273,9 @@ class PerplexitySearchProvider(BaseSearchProvider):
             metadata={
                 "multi_query": isinstance(query, list) and len(query) > 1,
                 "queries": query if isinstance(query, list) else [query],
-                "images_scraped": self.enable_image_scraping and self.image_scraper is not None,
-            }
+                "images_scraped": self.enable_image_scraping
+                and self.image_scraper is not None,
+            },
         )
 
     def _parse_result_item(self, item: dict) -> SearchResult:
@@ -214,6 +304,7 @@ class PerplexitySearchProvider(BaseSearchProvider):
         """Extract domain from URL"""
         try:
             from urllib.parse import urlparse
+
             parsed = urlparse(url)
             return parsed.netloc
         except Exception:
@@ -226,9 +317,14 @@ class PerplexitySearchProvider(BaseSearchProvider):
         country: Optional[str] = None,
         search_language_filter: Optional[List[str]] = None,
         search_domain_filter: Optional[List[str]] = None,
+        search_recency_filter: Optional[Literal["day", "week", "month", "year"]] = None,
+        search_after_date_filter: Optional[str] = None,
+        search_before_date_filter: Optional[str] = None,
+        last_updated_after_filter: Optional[str] = None,
+        last_updated_before_filter: Optional[str] = None,
         max_tokens: Optional[int] = None,
         max_tokens_per_page: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> SearchResponse:
         """
         Perform Perplexity search
@@ -239,6 +335,11 @@ class PerplexitySearchProvider(BaseSearchProvider):
             country: ISO country code for regional results
             search_language_filter: List of ISO 639-1 language codes
             search_domain_filter: List of domains (use "-" prefix to exclude)
+            search_recency_filter: Filter by recency - "day", "week", "month", or "year"
+            search_after_date_filter: Only include content published after this date (%m/%d/%Y)
+            search_before_date_filter: Only include content published before this date (%m/%d/%Y)
+            last_updated_after_filter: Only include content updated after this date (%m/%d/%Y)
+            last_updated_before_filter: Only include content updated before this date (%m/%d/%Y)
             max_tokens: Maximum total tokens across all results
             max_tokens_per_page: Maximum tokens per page
             **kwargs: Additional search parameters
@@ -256,30 +357,39 @@ class PerplexitySearchProvider(BaseSearchProvider):
             country=country,
             search_language_filter=search_language_filter,
             search_domain_filter=search_domain_filter,
+            search_recency_filter=search_recency_filter,
+            search_after_date_filter=search_after_date_filter,
+            search_before_date_filter=search_before_date_filter,
+            last_updated_after_filter=last_updated_after_filter,
+            last_updated_before_filter=last_updated_before_filter,
             max_tokens=max_tokens,
             max_tokens_per_page=max_tokens_per_page,
         )
 
         # Use a fresh client per request to avoid event loop issues
         async with httpx.AsyncClient(
-            timeout=httpx.Timeout(30.0),
-            headers=self._get_client_headers()
+            timeout=httpx.Timeout(30.0), headers=self._get_client_headers()
         ) as client:
             response = await client.post(self.BASE_URL, json=body)
             response.raise_for_status()
             raw_response = response.json()
             return await self._parse_perplexity_response(query, raw_response)
 
-    def   search_sync(
+    def search_sync(
         self,
         query: Union[str, List[str]],
         max_results: int = 10,
         country: Optional[str] = None,
         search_language_filter: Optional[List[str]] = None,
         search_domain_filter: Optional[List[str]] = None,
+        search_recency_filter: Optional[Literal["day", "week", "month", "year"]] = None,
+        search_after_date_filter: Optional[str] = None,
+        search_before_date_filter: Optional[str] = None,
+        last_updated_after_filter: Optional[str] = None,
+        last_updated_before_filter: Optional[str] = None,
         max_tokens: Optional[int] = None,
         max_tokens_per_page: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> SearchResponse:
         """
         Synchronous version of search
@@ -290,6 +400,11 @@ class PerplexitySearchProvider(BaseSearchProvider):
             country: ISO country code for regional results
             search_language_filter: List of ISO 639-1 language codes
             search_domain_filter: List of domains
+            search_recency_filter: Filter by recency - "day", "week", "month", or "year"
+            search_after_date_filter: Only include content published after this date (%m/%d/%Y)
+            search_before_date_filter: Only include content published before this date (%m/%d/%Y)
+            last_updated_after_filter: Only include content updated after this date (%m/%d/%Y)
+            last_updated_before_filter: Only include content updated before this date (%m/%d/%Y)
             max_tokens: Maximum total tokens across all results
             max_tokens_per_page: Maximum tokens per page
             **kwargs: Additional search parameters
@@ -307,6 +422,11 @@ class PerplexitySearchProvider(BaseSearchProvider):
             country=country,
             search_language_filter=search_language_filter,
             search_domain_filter=search_domain_filter,
+            search_recency_filter=search_recency_filter,
+            search_after_date_filter=search_after_date_filter,
+            search_before_date_filter=search_before_date_filter,
+            last_updated_after_filter=last_updated_after_filter,
+            last_updated_before_filter=last_updated_before_filter,
             max_tokens=max_tokens,
             max_tokens_per_page=max_tokens_per_page,
         )
@@ -316,7 +436,7 @@ class PerplexitySearchProvider(BaseSearchProvider):
             headers={
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
-            }
+            },
         ) as client:
             response = client.post(self.BASE_URL, json=body)
             response.raise_for_status()
@@ -331,6 +451,11 @@ class PerplexitySearchProvider(BaseSearchProvider):
         country: Optional[str] = None,
         search_language_filter: Optional[List[str]] = None,
         search_domain_filter: Optional[List[str]] = None,
+        search_recency_filter: Optional[Literal["day", "week", "month", "year"]] = None,
+        search_after_date_filter: Optional[str] = None,
+        search_before_date_filter: Optional[str] = None,
+        last_updated_after_filter: Optional[str] = None,
+        last_updated_before_filter: Optional[str] = None,
         max_tokens: Optional[int] = None,
         max_tokens_per_page: Optional[int] = None,
         enable_image_scraping: Optional[bool] = None,
@@ -345,6 +470,11 @@ class PerplexitySearchProvider(BaseSearchProvider):
             country: ISO country code
             search_language_filter: List of language codes
             search_domain_filter: List of domains
+            search_recency_filter: Filter by recency - "day", "week", "month", or "year"
+            search_after_date_filter: Only include content published after this date (%m/%d/%Y)
+            search_before_date_filter: Only include content published before this date (%m/%d/%Y)
+            last_updated_after_filter: Only include content updated after this date (%m/%d/%Y)
+            last_updated_before_filter: Only include content updated before this date (%m/%d/%Y)
             max_tokens: Maximum total tokens
             max_tokens_per_page: Maximum tokens per page
             enable_image_scraping: Enable/disable image scraping
@@ -359,6 +489,16 @@ class PerplexitySearchProvider(BaseSearchProvider):
             self.search_language_filter = search_language_filter[:10]
         if search_domain_filter is not None:
             self.search_domain_filter = search_domain_filter[:20]
+        if search_recency_filter is not None:
+            self.search_recency_filter = search_recency_filter
+        if search_after_date_filter is not None:
+            self.search_after_date_filter = self._validate_date_format(search_after_date_filter)
+        if search_before_date_filter is not None:
+            self.search_before_date_filter = self._validate_date_format(search_before_date_filter)
+        if last_updated_after_filter is not None:
+            self.last_updated_after_filter = self._validate_date_format(last_updated_after_filter)
+        if last_updated_before_filter is not None:
+            self.last_updated_before_filter = self._validate_date_format(last_updated_before_filter)
         if max_tokens is not None:
             self.max_tokens = min(max_tokens, 1000000)
         if max_tokens_per_page is not None:
@@ -382,59 +522,63 @@ class PerplexitySearchProvider(BaseSearchProvider):
         if image_scraping_max_concurrent is not None:
             self.image_scraping_max_concurrent = image_scraping_max_concurrent
 
-    async def summarize_results(self, query: str, response) -> str:
+    async def summarize_results(self, query: str, format_response: str) -> str:
         """
         Summarize Perplexity search results using LLM with a structured extraction format.
 
         Output format (repeat per source):
-            - Headline:
-            - Summary:
-            - Url:
-            - Score:
+            - Title:
+            - Published:
+            - URL:
+            - Image URL:
+            - Content:
 
         Args:
             query: The original search query
-            response: SearchResponse containing results to summarize
+            format_response: Formatted response string containing results to summarize
 
         Returns:
             Summarized content as a string
         """
-        combined_content = response[:MAX_TOTAL_CONTENT]
+        combined_content = format_response
+        
+        # Get current date for context
+        current_date = datetime.now().strftime("%Y-%m-%d")
 
         system_prompt = f"""
-You are a helpful assistant that extracts and synthesizes information from web search results.
+            You are a helpful assistant that extracts and synthesizes information from web search results.
+            
+            IMPORTANT: Today's date is {current_date}. Use this to determine which information is current and recent.
 
-Your task:
-- Read multiple search results related to the query: "{query}"
-- Extract useful information from each source
-- Ignore any source that does not contain meaningful content
-- Do NOT invent facts or URLs
-- Pay attention to relevance scores (higher is better)
+            Your task:
+            - Read multiple search results related to the query: "{query}"
+            - Extract useful information from each source
+            - Prioritize the most recent information based on publication dates
+            - For news queries, focus on articles published within the last few days
+            - Ignore any source that does not contain meaningful content or is significantly outdated
+            - Do NOT invent facts or URLs
+            - Pay attention to relevance scores (higher is better)
+            - When summarizing news, mention how recent the information is (e.g., "as of [date]")
 
-Your output MUST follow this exact format.
-Repeat the block for EACH valid source.
+            Your output MUST follow this exact format.
+            Repeat the block for EACH valid source.
 
-Output format:
-- Headline: concise title capturing the main idea of the page
-- Content: a detailed content in a paragraph or multiple paragraph
-- Url: original source URL
-- Image link: image URL if available
+            Output format:
+            - Title: concise title capturing the main idea of the page
+            - Published: publication date in YYYY-MM-DD format or "N/A" if not available
+            - URL: original source URL
+            - Image URL: image URL if available, otherwise "N/A"
+            - Content: a detailed content in a paragraph or multiple paragraph
 
-Search results:
-{combined_content}
-"""
-        llm = FallbackLLM(openai_model="gpt-4.1-nano")
-        llm_response = await llm.ainvoke(system_prompt)
-        summary = llm_response.content
-        return summary
-
+            Search results:
+            {combined_content}
+        """
+        response = await self.llm.ainvoke([HumanMessage(content=system_prompt)])
+        return response.content if hasattr(response, 'content') else str(response)
 
 
     async def search_and_summarize(
-        self,
-        query: str,
-        max_results: int = 40,
-        **kwargs
+        self, query: str, max_results: int = 40, **kwargs
     ) -> dict:
         """
         Search and summarize results in one call
@@ -442,151 +586,47 @@ Search results:
         Args:
             query: Search query string
             max_results: Maximum number of results to return
-            **kwargs: Additional search parameters
+            **kwargs: Additional search parameters (including search_recency_filter)
 
         Returns:
             Dictionary with 'response', 'summary', and 'provider' keys
         """
+        # Default to "week" recency filter for news queries if not specified
+        if "search_recency_filter" not in kwargs and any(
+            keyword in query.lower() for keyword in ["latest", "news", "recent", "current", "today"]
+        ):
+            kwargs["search_recency_filter"] = "week"
+
         response = await self.search(query, max_results, **kwargs)
-
-        format_response = []
-
+        format_response_parts = []
         for res in response.results:
-            format_response.append(f"""
-            - Headline: {res.title}
-            - Content: {res.content}
-            - Url: {res.url}
-            - Image link: {res.image_url}
-            """)
-        format_response = "\n".join(format_response)
+            image_url_str = str(res.image_url) if res.image_url else "N/A"
+            published_str = (
+                res.published_at.strftime("%Y-%m-%d %H:%M:%S")
+                if res.published_at
+                else "N/A"
+            )
+            text_content = res.snippet if res.snippet else res.content or ""
+            sub_string = f"""
+                    - Title: {res.title}
+                    - Published: {published_str}
+                    - URL: {res.url}
+                    - Image URL: {image_url_str}
+                    - Content: {text_content}
+            """
+            format_response_parts.append(sub_string)
+
+        format_response = "\n".join(format_response_parts)
         summary = await self.summarize_results(query, format_response)
 
-        return {
-            'provider': self.provider_name,
-            'response': response,
-            'summary': summary,
-            'query': query,
-            'total_results': response.total_results,
-        }
+        return summary
 
-    async def multi_query_search(
-        self,
-        queries: List[str],
-        max_results: int = 5,
-        **kwargs
-    ) -> SearchResponse:
-        """
-        Execute multiple related queries in a single request
-
-        Args:
-            queries: List of search queries (max 5)
-            max_results: Maximum results per query
-            **kwargs: Additional search parameters
-
-        Returns:
-            SearchResponse with aggregated results from all queries
-        """
-        return await self.search(
-            query=queries[:5],
-            max_results=max_results,
-            **kwargs
-        )
-
-    async def search_with_domain_allowlist(
-        self,
-        query: str,
-        domains: List[str],
-        max_results: int = 10,
-        **kwargs
-    ) -> SearchResponse:
-        """
-        Search limited to specific domains (allowlist mode)
-
-        Args:
-            query: Search query string
-            domains: List of domains to include (max 20)
-            max_results: Maximum number of results
-            **kwargs: Additional parameters
-
-        Returns:
-            SearchResponse with results only from specified domains
-        """
-        return await self.search(
-            query=query,
-            max_results=max_results,
-            search_domain_filter=domains[:20],
-            **kwargs
-        )
-
-    async def search_with_domain_denylist(
-        self,
-        query: str,
-        domains: List[str],
-        max_results: int = 10,
-        **kwargs
-    ) -> SearchResponse:
-        """
-        Search excluding specific domains (denylist mode)
-
-        Args:
-            query: Search query string
-            domains: List of domains to exclude (without "-" prefix)
-            max_results: Maximum number of results
-            **kwargs: Additional parameters
-
-        Returns:
-            SearchResponse excluding specified domains
-        """
-        # Add "-" prefix to each domain for denylist mode
-        denylist = [f"-{domain}" if not domain.startswith("-") else domain 
-                    for domain in domains]
-        return await self.search(
-            query=query,
-            max_results=max_results,
-            search_domain_filter=denylist[:20],
-            **kwargs
-        )
-
-    async def regional_search(
-        self,
-        query: str,
-        country: str,
-        max_results: int = 10,
-        **kwargs
-    ) -> SearchResponse:
-        """
-        Search with regional filtering
-
-        Args:
-            query: Search query string
-            country: ISO 3166-1 alpha-2 country code
-            max_results: Maximum number of results
-            **kwargs: Additional parameters
-
-        Returns:
-            SearchResponse with regionally relevant results
-        """
-        return await self.search(
-            query=query,
-            max_results=max_results,
-            country=country,
-            **kwargs
-        )
-
-    async def __aenter__(self):
-        """Async context manager entry"""
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit - no cleanup needed with per-request clients"""
-        pass
-
-
-if __name__ == "__main__":  
+if __name__ == "__main__":
     import asyncio
-    from src.search_service.perplexity_search import PerplexitySearchProvider
     provider = PerplexitySearchProvider()
-    response = provider.search_sync("What is the weather in Tokyo?")
-    # response = asyncio.run(provider.search_and_summarize("What is the weather in Tokyo?"))
+    response = asyncio.run(provider.search_and_summarize("get latest news about bitcoin 1st Feb 2026"))
     print(response)
-    print("-------------------------------- RESPONSE PERPLEXITY--------------------------------")
+    print(
+        "-------------------------------- RESPONSE PERPLEXITY--------------------------------"
+    )
+

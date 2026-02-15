@@ -24,6 +24,9 @@ async def get_ohlc(
     try:
         return await get_ohlc_data(trading_pair, interval, limit, offset, sort)
     except Exception as e:
+        print(f"Error in get_ohlc endpoint: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

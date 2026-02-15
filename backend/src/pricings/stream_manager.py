@@ -52,7 +52,36 @@ class PriceStreamManager:
                     return_exceptions=True,
                 )
 
-        task = asyncio.create_task(client.listen(broadcast_tick))
+        async def listen_with_reconnect():
+            """Listen with automatic reconnection on failure"""
+            max_retries = 5
+            retry_count = 0
+            retry_delay = 1
+
+            while retry_count < max_retries:
+                try:
+                    await client.listen(broadcast_tick)
+                    break  # Successful completion, exit loop
+                except Exception as e:
+                    retry_count += 1
+                    print(f"WebSocket error for {symbol_str}, attempt {retry_count}/{max_retries}: {e}")
+
+                    if retry_count < max_retries:
+                        print(f"Reconnecting in {retry_delay} seconds...")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay = min(retry_delay * 2, 30)  # Exponential backoff, max 30s
+
+                        try:
+                            await client.disconnect()
+                            await client.connect()
+                            print(f"Reconnected to {symbol_str}")
+                        except Exception as reconnect_error:
+                            print(f"Reconnection failed: {reconnect_error}")
+                    else:
+                        print(f"Max retries reached for {symbol_str}, giving up")
+                        break
+
+        task = asyncio.create_task(listen_with_reconnect())
         self.tasks[symbol_str] = task
 
     async def _stop_stream(self, symbol_str: str):

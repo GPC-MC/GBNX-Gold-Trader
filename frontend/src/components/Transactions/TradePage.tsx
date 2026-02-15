@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { ArrowLeftRight, RefreshCcw } from 'lucide-react';
+import { usePrice } from '../../contexts/PriceContext';
 
 const OZ_PER_GRAM = 1 / 31.1034768;
 
@@ -37,16 +38,18 @@ const TradePage: React.FC = () => {
     return raw.replace(/\/+$/, '');
   }, []);
 
+  // Use real-time WebSocket price
+  const { goldPrice: liveGoldPrice, goldBid, goldAsk, lastUpdate, isConnected } = usePrice();
+
   const [goldGrams, setGoldGrams] = useState('');
   const [loading, setLoading] = useState(false);
   const [txnId, setTxnId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
 
-  const [goldPrice, setGoldPrice] = useState<number | null>(null);
-  const [goldPriceLoading, setGoldPriceLoading] = useState(false);
-  const [goldPriceError, setGoldPriceError] = useState<string | null>(null);
-  const [goldPriceAt, setGoldPriceAt] = useState<Date | null>(null);
+  // Use live price from WebSocket
+  const goldPrice = liveGoldPrice;
+  const goldPriceAt = lastUpdate;
 
   const [balances, setBalances] = useState<AccountBalance[]>([]);
   const [balancesLoading, setBalancesLoading] = useState(false);
@@ -75,28 +78,8 @@ const TradePage: React.FC = () => {
     }
   };
 
-  const fetchGoldPrice = async () => {
-    if (!apiBaseUrl) return;
-    setGoldPriceLoading(true);
-    setGoldPriceError(null);
-    try {
-      const res = await fetch(`${apiBaseUrl}/transactions/gold-price`);
-      if (!res.ok) {
-        throw new Error(await parseErrorMessage(res));
-      }
-      const data = (await res.json()) as { price_usd_per_oz: number };
-      setGoldPrice(data.price_usd_per_oz);
-      setGoldPriceAt(new Date());
-    } catch (err) {
-      setGoldPriceError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setGoldPriceLoading(false);
-    }
-  };
-
   useEffect(() => {
     void fetchBalances();
-    void fetchGoldPrice();
   }, [apiBaseUrl]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -170,11 +153,11 @@ const TradePage: React.FC = () => {
           <p className="mt-2 text-sm text-gray-400">Create buys and sells while monitoring balance flow between MC and House.</p>
         </div>
         <button
-          onClick={() => { void fetchBalances(); void fetchGoldPrice(); }}
+          onClick={() => { void fetchBalances(); }}
           className="inline-flex items-center gap-2 rounded-xl border border-gold-500/20 bg-ink-850/55 px-4 py-2 text-sm font-semibold text-gold-300 hover:bg-gold-500/10 transition"
         >
           <RefreshCcw size={16} />
-          Refresh
+          Refresh Balances
         </button>
       </div>
 
@@ -225,14 +208,24 @@ const TradePage: React.FC = () => {
 
             <div className="rounded-xl bg-ink-800/60 border border-gold-500/10 px-3 py-2.5 flex items-center justify-between">
               <div>
-                <span className="text-sm text-gray-400">Live price (USD / oz)</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-400">Live price (USD / oz)</span>
+                  <span className={`h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+                </div>
                 {goldPriceAt && <div className="text-xs text-gray-500">Updated {goldPriceAt.toLocaleTimeString()}</div>}
+                {!isConnected && <div className="text-xs text-amber-300">Connecting to price feed...</div>}
               </div>
-              <span className="text-sm font-semibold text-gold-300">
-                {goldPriceLoading ? 'Fetching...' : goldPriceError ? '—' : goldPrice ? `$${formatNumber(goldPrice, 2)}` : '—'}
-              </span>
+              <div className="text-right">
+                <div className="text-sm font-semibold text-gold-300">
+                  {goldPrice ? `$${formatNumber(goldPrice, 2)}` : 'Waiting...'}
+                </div>
+                {goldBid && goldAsk && (
+                  <div className="text-xs text-gray-500">
+                    Bid: ${formatNumber(goldBid, 2)} / Ask: ${formatNumber(goldAsk, 2)}
+                  </div>
+                )}
+              </div>
             </div>
-            {goldPriceError && <div className="text-xs text-rose-300">{goldPriceError}</div>}
           </div>
 
           {insufficientBalance && (

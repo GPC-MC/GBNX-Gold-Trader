@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePrice } from '../../contexts/PriceContext';
 import {
   TrendingUp,
   Briefcase,
@@ -16,6 +17,7 @@ import {
 
 const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const { goldPrice, isConnected: isPriceConnected } = usePrice();
 
   const apiBaseUrl = useMemo(() => {
     const raw = (import.meta.env.VITE_BACKEND_API_BASE_URL as string | undefined) || '';
@@ -23,6 +25,8 @@ const Navbar: React.FC = () => {
   }, []);
 
   const [mcXau, setMcXau] = useState(0);
+  const [previousPrice, setPreviousPrice] = useState(goldPrice);
+  const [priceDirection, setPriceDirection] = useState<'up' | 'down' | 'neutral'>('neutral');
 
   useEffect(() => {
     if (!apiBaseUrl) return;
@@ -35,6 +39,22 @@ const Navbar: React.FC = () => {
       })
       .catch(() => {});
   }, [apiBaseUrl]);
+
+  // Track price direction
+  useEffect(() => {
+    if (goldPrice && previousPrice) {
+      if (goldPrice > previousPrice) {
+        setPriceDirection('up');
+      } else if (goldPrice < previousPrice) {
+        setPriceDirection('down');
+      }
+      setPreviousPrice(goldPrice);
+
+      // Reset direction after animation
+      const timer = setTimeout(() => setPriceDirection('neutral'), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [goldPrice, previousPrice]);
 
   const primaryNavItems = [
     { path: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
@@ -107,6 +127,22 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 border-l border-gold-500/20 pl-3">
+            {/* Live Gold Price */}
+            <div className="hidden rounded-md border border-gold-500/20 bg-ink-900/75 px-3 py-2 md:block">
+              <div className="flex items-center gap-2">
+                <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500">XAU/USD</div>
+                <span className={`h-1.5 w-1.5 rounded-full ${isPriceConnected ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`} />
+              </div>
+              <div className={clsx(
+                "font-mono text-sm font-semibold transition-colors duration-300",
+                priceDirection === 'up' ? 'text-emerald-300' :
+                priceDirection === 'down' ? 'text-rose-300' :
+                'text-gold-300'
+              )}>
+                {goldPrice ? `$${goldPrice.toFixed(2)}` : 'Loading...'}
+              </div>
+            </div>
+
             <div className="hidden rounded-md border border-gold-500/20 bg-ink-900/75 px-3 py-2 md:block">
               <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500">MC XAU</div>
               <div className="font-mono text-sm font-semibold text-gold-300">{mcXau.toFixed(3)} oz</div>

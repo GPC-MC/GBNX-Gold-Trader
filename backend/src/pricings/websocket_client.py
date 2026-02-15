@@ -22,12 +22,25 @@ class PriceWebSocketClient:
         self.running = False
 
     async def connect(self):
-        self.websocket = await websockets.connect(self.url)
+        print(f"Connecting to external WebSocket: {self.url}")
+        # Increase max_size to 10MB to handle large messages from external source
+        # Set max_queue to handle bursts of messages
+        # Enable compression to reduce bandwidth
+        self.websocket = await websockets.connect(
+            self.url,
+            max_size=10 * 1024 * 1024,  # 10MB max message size
+            max_queue=32,  # Increase queue size
+            ping_interval=20,  # Send ping every 20 seconds
+            ping_timeout=10,  # Wait 10 seconds for pong
+            compression="deflate",  # Enable compression
+        )
         self.running = True
+        print(f"Successfully connected to {self.url} with compression enabled")
 
     async def disconnect(self):
         self.running = False
         if self.websocket:
+            print(f"Disconnecting from {self.url}")
             await self.websocket.close()
             self.websocket = None
 
@@ -36,27 +49,57 @@ class PriceWebSocketClient:
             raise RuntimeError("WebSocket not connected")
 
         message = await self.websocket.recv()
-        data = json.loads(message)
 
-        return TickData(
-            symbol=data.get("symbol", self.symbol.value),
-            bid=data["bid"],
-            ask=data["ask"],
-            timestamp=datetime.fromisoformat(data["timestamp"]) if "timestamp" in data else datetime.now(),
-            spread=data.get("spread"),
-        )
+        # Handle large messages by truncating log output
+        message_size = len(message)
+        if message_size > 1000:
+            print(f"Received large message ({message_size} bytes) from {self.symbol.value}")
+            print(f"First 200 chars: {message[:200]}")
+        else:
+            print(f"Received tick from {self.symbol.value}: {message}")
+
+        try:
+            data = json.loads(message)
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON: {e}")
+            print(f"Message: {message[:500]}")
+            raise
+
+        # Validate required fields
+        if "bid" not in data or "ask" not in data:
+            print(f"Missing required fields in message: {data.keys()}")
+            raise ValueError(f"Message missing bid or ask fields")
+
+        # Extract only the necessary fields to keep response size manageable
+        try:
+            return TickData(
+                symbol=data.get("symbol", self.symbol.value),
+                bid=float(data["bid"]),
+                ask=float(data["ask"]),
+                timestamp=datetime.fromisoformat(data["timestamp"]) if "timestamp" in data else datetime.now(),
+                spread=float(data["spread"]) if data.get("spread") is not None else None,
+            )
+        except (ValueError, KeyError, TypeError) as e:
+            print(f"Failed to create TickData from message: {e}")
+            print(f"Data: {data}")
+            raise
 
     async def listen(self, callback: Callable[[TickData], Awaitable[None]]):
         if not self.websocket:
             await self.connect()
 
         try:
+            print(f"Starting to listen for ticks on {self.symbol.value}")
             while self.running:
                 tick = await self.receive_tick()
                 await callback(tick)
-        except websockets.exceptions.ConnectionClosed:
+        except websockets.exceptions.ConnectionClosed as e:
+            print(f"WebSocket connection closed for {self.symbol.value}: {e}")
             self.running = False
         except Exception as e:
+            print(f"Error in WebSocket listen for {self.symbol.value}: {e}")
+            import traceback
+            traceback.print_exc()
             self.running = False
             raise e
 

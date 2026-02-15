@@ -16,7 +16,13 @@ from src.search_service.base import (
     SearchResponse,
     SearchResult,
     ImageResult,
+    truncate_content,
+    truncate_combined_content,
+    MAX_CONTENT_PER_RESULT,
+    MAX_TOTAL_CONTENT,
+    MAX_RESULTS_FOR_SUMMARY,
 )
+from src.search_service.image_scraper import ImageScraper
 from src.app_config import app_config
 from src.llm import FallbackLLM
 
@@ -38,6 +44,9 @@ class TavilySearchProvider(BaseSearchProvider):
         days: int = 5,
         include_domains: Optional[List[str]] = None,
         exclude_domains: Optional[List[str]] = None,
+        enable_image_scraping: bool = True,
+        image_scraping_timeout: float = 5.0,
+        image_scraping_max_concurrent: int = 5,
         **kwargs
     ):
         """
@@ -56,6 +65,9 @@ class TavilySearchProvider(BaseSearchProvider):
             days: Number of days to search back
             include_domains: List of domains to include
             exclude_domains: List of domains to exclude
+            enable_image_scraping: Enable image scraping for individual results (default True)
+            image_scraping_timeout: Timeout for image scraping requests in seconds (default 5.0)
+            image_scraping_max_concurrent: Max concurrent image scraping requests (default 5)
             **kwargs: Additional configuration
         """
         super().__init__(api_key, **kwargs)
@@ -89,11 +101,22 @@ class TavilySearchProvider(BaseSearchProvider):
         self.include_images = include_images
         self.days = days
 
+        # Image scraping configuration for individual results
+        self.enable_image_scraping = enable_image_scraping
+        self.image_scraping_timeout = image_scraping_timeout
+        self.image_scraping_max_concurrent = image_scraping_max_concurrent
+
+        # Initialize image scraper if enabled
+        if self.enable_image_scraping:
+            self.result_image_scraper = ImageScraper(timeout=self.image_scraping_timeout)
+        else:
+            self.result_image_scraper = None
+
     @property
     def provider_name(self) -> str:
         return "tavily"
 
-    def _parse_tavily_response(self, query: str, raw_response: dict) -> SearchResponse:
+    async def _parse_tavily_response(self, query: str, raw_response: dict) -> SearchResponse:
         """Parse raw Tavily response into SearchResponse model"""
         # Parse images
         images = []
@@ -117,6 +140,26 @@ class TavilySearchProvider(BaseSearchProvider):
                 score=item.get("score"),
                 raw_content=item.get("raw_content") if self.include_raw_content else None,
             ))
+
+        # Scrape images from URLs for individual results
+        if self.enable_image_scraping and self.result_image_scraper and results:
+            try:
+                # Extract URLs from results
+                urls = [str(result.url) for result in results]
+
+                # Batch scrape images concurrently
+                image_urls = await self.result_image_scraper.scrape_images_batch(
+                    urls,
+                    max_concurrent=self.image_scraping_max_concurrent
+                )
+
+                # Assign images to results
+                for result, image_url in zip(results, image_urls):
+                    if image_url and not isinstance(image_url, Exception):
+                        result.image_url = image_url
+            except Exception as e:
+                print(f"Error during batch image scraping: {e}")
+                # Continue without images if scraping fails
 
         return SearchResponse(
             query=query,
@@ -159,7 +202,7 @@ class TavilySearchProvider(BaseSearchProvider):
         # Tavily's invoke is synchronous, so we just call it
         raw_response = self.tavily_tool.invoke(query)
 
-        return self._parse_tavily_response(query, raw_response)
+        return await self._parse_tavily_response(query, raw_response)
 
     def search_sync(
         self,
@@ -178,13 +221,15 @@ class TavilySearchProvider(BaseSearchProvider):
         Returns:
             SearchResponse object containing results
         """
+        import asyncio
+
         # Update max_results if provided
         if max_results != self.max_results:
             self.tavily_tool.max_results = max_results
 
         raw_response = self.tavily_tool.invoke(query)
 
-        return self._parse_tavily_response(query, raw_response)
+        return asyncio.run(self._parse_tavily_response(query, raw_response))
 
     def update_config(
         self,
@@ -223,7 +268,7 @@ class TavilySearchProvider(BaseSearchProvider):
         if exclude_domains is not None:
             self.tavily_tool.exclude_domains = exclude_domains
 
-    def summarize_results(self, query: str, response) -> str:
+    async def summarize_results(self, query: str, response: SearchResponse) -> str:
         """
         Summarize Tavily search results using LLM with a structured extraction format.
 
@@ -236,6 +281,7 @@ class TavilySearchProvider(BaseSearchProvider):
             - Long content:
             - Url:
             - Score:
+            - Images: (if available)
 
         Args:
             query: The original search query
@@ -244,6 +290,43 @@ class TavilySearchProvider(BaseSearchProvider):
         Returns:
             Summarized content as a string
         """
+        if not response.results:
+            return response.answer or "No search results found."
+
+        content_parts = []
+        for result in response.results[:MAX_RESULTS_FOR_SUMMARY]:
+            # Tavily provides content or raw_content
+            text_content = result.raw_content or result.content or result.snippet or ""
+            if not text_content.strip():
+                continue  # ignore empty content sources
+
+            # Truncate content to prevent context overflow
+            text_content = truncate_content(text_content, MAX_CONTENT_PER_RESULT)
+            score_str = f"{result.score:.2f}" if result.score is not None else "N/A"
+            image_url_str = result.image_url or "N/A"
+
+            content_parts.append(f"""
+Title: {result.title}
+URL: {result.url}
+Score: {score_str}
+Image URL: {image_url_str}
+Content:
+{text_content}
+---
+""")
+
+        if not content_parts:
+            return response.answer or "No valid content found in search results."
+
+        combined_content = "\n".join(content_parts)
+        # Truncate combined content to prevent LLM context overflow
+        combined_content = truncate_combined_content(combined_content, MAX_TOTAL_CONTENT)
+
+        # Include Tavily's AI answer if available
+        tavily_answer_context = ""
+        if response.answer:
+            tavily_answer_context = f"\n\nTavily AI Answer: {response.answer}"
+
         system_prompt = f"""
 You are a helpful assistant that extracts and synthesizes information from web search results.
 
@@ -252,28 +335,82 @@ Your task:
 - Extract useful information from each source
 - Ignore any source that does not contain meaningful content
 - Do NOT invent facts or URLs
-- IMPORTANT: Include relevant image links from the "Available Images" section below
+- Pay attention to relevance scores (higher is better){tavily_answer_context}
 
 Your output MUST follow this exact format.
 Repeat the block for EACH valid source.
 
 Output format:
 - Headline: concise title capturing the main idea of the page
-- Summary: 2–3 sentence short summary
+- Content: a detailed content in a paragraph or multiple paragraph
 - Url: original source URL
 - Score: relevance score
-- Image link: include relevant image URL(s) from the Available Images section below
+- Image link: image URL if available
 
-Input: {response}
-
-Answer:
+Search results:
+{combined_content}
 """
 
-        llm = FallbackLLM(model="gpt-5-nano")
-        result = llm.invoke(system_prompt)
-        summary = result.content if hasattr(result, 'content') else str(result)
-        return summary
+        # Capture Tavily's answer before LLM call (to avoid variable shadowing)
+        tavily_answer = response.answer
+        tavily_results = response.results
+        tavily_images = response.images
 
+        try:
+            llm = FallbackLLM()
+            # Use ainvoke() - returns AIMessage with .content attribute
+            llm_response = await llm.ainvoke(system_prompt)
+            summary = llm_response.content
+
+            # Build final result with images
+            result_parts = []
+            
+            # Prepend Tavily's answer if available
+            if tavily_answer:
+                result_parts.append(f"**Tavily AI Answer:**\n{tavily_answer}")
+            
+            result_parts.append(f"**Detailed Sources:**\n{summary}")
+            
+            # Append images if available
+            if tavily_images:
+                image_section = "\n**Related Images:**\n"
+                for idx, img in enumerate(tavily_images[:10], 1):
+                    img_url = str(img.url) if img.url else ""
+                    img_desc = img.description or "No description"
+                    image_section += f"{idx}. {img_desc}\n   URL: {img_url}\n"
+                result_parts.append(image_section)
+            
+            return "\n\n".join(result_parts)
+
+        except Exception as e:
+            print(f"Error in summarization: {e}")
+            # fallback: minimal structured output
+            fallback = ""
+            if tavily_answer:
+                fallback += f"**Tavily AI Answer:**\n{tavily_answer}\n\n"
+
+            for result in tavily_results[:10]:
+                text_content = result.raw_content or result.content or result.snippet or ""
+                if not text_content:
+                    continue
+                score_str = f"{result.score:.2f}" if result.score is not None else "N/A"
+                image_url_str = result.image_url or "N/A"
+                fallback += f"""- Headline: {result.title}
+- Summary: {text_content[:200]}...
+- Url: {result.url}
+- Score: {score_str}
+- Image link: {image_url_str}
+
+"""
+            # Add images to fallback as well
+            if tavily_images:
+                fallback += "\n**Related Images:**\n"
+                for idx, img in enumerate(tavily_images[:10], 1):
+                    img_url = str(img.url) if img.url else ""
+                    img_desc = img.description or "No description"
+                    fallback += f"{idx}. {img_desc}\n   URL: {img_url}\n"
+            
+            return fallback
 
     async def search_and_summarize(
         self,
@@ -293,47 +430,31 @@ Answer:
             Dictionary with 'response', 'summary', and 'provider' keys
         """
         response = await self.search(query, max_results, **kwargs)
-
-        # Format response as a single string containing search results and images
-        formatted_response_parts = []
-
-        # Add search results
-        if response.results:
-            formatted_response_parts.append("Results for search:")
-            for idx, result in enumerate(response.results, 1):
-                result_info = []
-                result_info.append(f"\n{idx}. Title: {result.title}")
-                result_info.append(f"   URL: {result.url}")
-                if result.content:
-                    result_info.append(f"   Content: {result.content}")
-                if result.published_at:
-                    result_info.append(f"   Published at: {result.published_at}")
-                formatted_response_parts.append("\n".join(result_info))
-
-        # Add image results
-        image_response = []
-        if response.images:
-            image_response.append("\n\nResults for image search:")
-            for idx, img in enumerate(response.images, 1):
-                img_info = f"\n{idx}. Image link: {img.url}"
-                if img.description:
-                    img_info += f"\n   Image description: {img.description}"
-                image_response.append(img_info)
-
-        image_response = "\n".join(image_response)
-        formatted_response = "\n".join(formatted_response_parts)
-
-
-
-        import pdb; pdb.set_trace()
-        summary = self.summarize_results(query, formatted_response)
-        import pdb; pdb.set_trace()
-
+        print("-------------------------------- RESPONSE TAVILY--------------------------------")
+        print(response)
+        print("----------------------------------------------------------------")
+        summary = await self.summarize_results(query, response)
+        print("-------------------------------- SUMMARY TAVILY--------------------------------")
+        print(summary)
+        print("----------------------------------------------------------------")
         return {
             'provider': self.provider_name,
-            'response': formatted_response,
+            'response': response,
             'summary': summary,
             'query': query,
             'total_results': response.total_results,
             'tavily_answer': response.answer  # Include Tavily's AI answer separately
         }
+
+
+# if __name__ == "__main__":
+#     import asyncio
+#     from src.search_service.tavily_search import TavilySearchProvider
+#     provider = TavilySearchProvider()
+#     response = provider.search_sync("What is the weather in Tokyo?")
+#     # response = asyncio.run(provider.search_and_summarize("What is the weather in Tokyo?"))
+#     print(response)
+#     print("-------------------------------- RESPONSE TAVILY--------------------------------")
+#     summary = asyncio.run(provider.summarize_results("What is the weather in Tokyo?", response))
+#     print(summary)
+#     print("-------------------------------- SUMMARY TAVILY--------------------------------")

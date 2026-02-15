@@ -18,12 +18,21 @@ interface ChartDataPoint {
   ADX: number;
 }
 
-interface ApiResponse {
-  total_records: number;
-  limit: number;
-  offset: number;
-  sort: string;
-  data: ChartDataPoint[];
+interface GoldOhlcApiItem {
+  timestamp: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number | null;
+}
+
+interface TickPayload {
+  symbol: string;
+  bid: number;
+  ask: number;
+  timestamp: string;
+  spread?: number;
 }
 
 interface CommodityConfig {
@@ -38,12 +47,186 @@ const commodityConfigs: Record<Commodity, CommodityConfig> = {
   cobalt: { name: 'COBALT', basePrice: 34.2, color: '#4EA9FF' }
 };
 
+const GOLD_WS_SYMBOL = 'XAU/USD';
+const MAX_GOLD_POINTS = 100;
+const EMA_PERIOD = 20;
+const STOCHASTIC_PERIOD = 14;
+const CCI_PERIOD = 20;
+const ADX_PERIOD = 14;
+
+const toWsBaseUrl = (apiBaseUrl: string) => {
+  if (!apiBaseUrl) return '';
+  try {
+    const parsed = new URL(apiBaseUrl);
+    parsed.protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+    return parsed.toString().replace(/\/+$/, '');
+  } catch {
+    return '';
+  }
+};
+
+const average = (values: number[]) =>
+  values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const withIndicators = (rows: ChartDataPoint[]): ChartDataPoint[] => {
+  let ema = 0;
+  let adx = 0;
+
+  const stochasticK: number[] = [];
+  const typicalPrices: number[] = [];
+  const trueRanges: number[] = [];
+  const plusDmValues: number[] = [];
+  const minusDmValues: number[] = [];
+
+  return rows.map((row, index) => {
+    const close = row.Close;
+    const high = row.High;
+    const low = row.Low;
+
+    const k = 2 / (EMA_PERIOD + 1);
+    ema = index === 0 ? close : close * k + ema * (1 - k);
+
+    const stochStart = Math.max(0, index - STOCHASTIC_PERIOD + 1);
+    const stochWindow = rows.slice(stochStart, index + 1);
+    const highestHigh = Math.max(...stochWindow.map((item) => item.High));
+    const lowestLow = Math.min(...stochWindow.map((item) => item.Low));
+    const stochK =
+      highestHigh === lowestLow ? 50 : ((close - lowestLow) / (highestHigh - lowestLow)) * 100;
+    stochasticK.push(stochK);
+    const stochDWindow = stochasticK.slice(Math.max(0, stochasticK.length - 3));
+    const stochasticD = clamp(average(stochDWindow), 0, 100);
+
+    const typicalPrice = (high + low + close) / 3;
+    typicalPrices.push(typicalPrice);
+    const cciWindow = typicalPrices.slice(Math.max(0, typicalPrices.length - CCI_PERIOD));
+    const cciMean = average(cciWindow);
+    const meanDeviation = average(cciWindow.map((price) => Math.abs(price - cciMean)));
+    const cci = meanDeviation === 0 ? 0 : (typicalPrice - cciMean) / (0.015 * meanDeviation);
+
+    if (index > 0) {
+      const prev = rows[index - 1];
+      const upMove = high - prev.High;
+      const downMove = prev.Low - low;
+      const plusDM = upMove > downMove && upMove > 0 ? upMove : 0;
+      const minusDM = downMove > upMove && downMove > 0 ? downMove : 0;
+      const trueRange = Math.max(high - low, Math.abs(high - prev.Close), Math.abs(low - prev.Close));
+
+      trueRanges.push(trueRange);
+      plusDmValues.push(plusDM);
+      minusDmValues.push(minusDM);
+
+      const trWindow = trueRanges.slice(Math.max(0, trueRanges.length - ADX_PERIOD));
+      const plusWindow = plusDmValues.slice(Math.max(0, plusDmValues.length - ADX_PERIOD));
+      const minusWindow = minusDmValues.slice(Math.max(0, minusDmValues.length - ADX_PERIOD));
+
+      const trSum = trWindow.reduce((sum, value) => sum + value, 0);
+      const plusSum = plusWindow.reduce((sum, value) => sum + value, 0);
+      const minusSum = minusWindow.reduce((sum, value) => sum + value, 0);
+
+      const plusDi = trSum === 0 ? 0 : (100 * plusSum) / trSum;
+      const minusDi = trSum === 0 ? 0 : (100 * minusSum) / trSum;
+      const dx =
+        plusDi + minusDi === 0 ? 0 : (100 * Math.abs(plusDi - minusDi)) / (plusDi + minusDi);
+      adx = index === 1 ? dx : (adx * (ADX_PERIOD - 1) + dx) / ADX_PERIOD;
+    }
+
+    return {
+      ...row,
+      EMA_20: ema,
+      Stochastic_D: stochasticD,
+      CCI: cci,
+      ADX: clamp(adx, 0, 100)
+    };
+  });
+};
+
+const toChartPoint = (dateTime: string, open: number, high: number, low: number, close: number, volume: number): ChartDataPoint => ({
+  Date_time: dateTime,
+  Open: open,
+  High: high,
+  Low: low,
+  Close: close,
+  Volume: volume,
+  EMA_20: close,
+  Stochastic_D: 50,
+  CCI: 0,
+  ADX: 0
+});
+
+const mapGoldHistory = (rows: GoldOhlcApiItem[]) => {
+  const sorted = [...rows].sort(
+    (left, right) => new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime()
+  );
+
+  return withIndicators(
+    sorted.map((row) =>
+      toChartPoint(
+        row.timestamp,
+        row.open,
+        row.high,
+        row.low,
+        row.close,
+        typeof row.volume === 'number' ? row.volume : 0
+      )
+    )
+  );
+};
+
+const isTickPayload = (value: unknown): value is TickPayload => {
+  if (typeof value !== 'object' || value === null) return false;
+  const payload = value as Record<string, unknown>;
+  return (
+    typeof payload.bid === 'number' &&
+    typeof payload.ask === 'number' &&
+    typeof payload.timestamp === 'string'
+  );
+};
+
+const upsertTickToChart = (current: ChartDataPoint[], price: number, timestamp: string) => {
+  const pointTime = new Date(timestamp);
+  const bucketTime = new Date(pointTime);
+  bucketTime.setSeconds(0, 0);
+  const bucketIso = bucketTime.toISOString();
+
+  if (!current.length) {
+    return withIndicators([toChartPoint(bucketIso, price, price, price, price, 1)]);
+  }
+
+  const next = [...current];
+  const last = next[next.length - 1];
+  const lastBucket = new Date(last.Date_time);
+  lastBucket.setSeconds(0, 0);
+
+  if (lastBucket.getTime() === bucketTime.getTime()) {
+    next[next.length - 1] = {
+      ...last,
+      High: Math.max(last.High, price),
+      Low: Math.min(last.Low, price),
+      Close: price,
+      Volume: last.Volume + 1
+    };
+  } else {
+    const open = last.Close;
+    next.push(toChartPoint(bucketIso, open, Math.max(open, price), Math.min(open, price), price, 1));
+  }
+
+  const trimmed = next.slice(-MAX_GOLD_POINTS);
+  return withIndicators(trimmed);
+};
+
 const Market: React.FC = () => {
+  const apiBaseUrl = ((import.meta.env.VITE_BACKEND_API_BASE_URL as string | undefined) || '').replace(/\/+$/, '');
+  const wsBaseUrl = toWsBaseUrl(apiBaseUrl);
+
   const [timeframe, setTimeframe] = useState('1D');
   const [selectedCommodity, setSelectedCommodity] = useState<Commodity>('gold');
   const [priceData, setPriceData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [wsReconnectAttempts, setWsReconnectAttempts] = useState(0);
 
   const timeframes = ['1H', '1D', '1W', '1M'];
   const commodities: Commodity[] = ['gold', 'silver', 'cobalt'];
@@ -70,57 +253,145 @@ const Market: React.FC = () => {
   };
 
   useEffect(() => {
-    const fetchChartData = async () => {
+    let isMounted = true;
+    let websocket: WebSocket | null = null;
+    let reconnectTimer: NodeJS.Timeout | null = null;
+
+    const connectGoldStream = () => {
+      if (!wsBaseUrl) {
+        setError('Missing or invalid VITE_BACKEND_API_BASE_URL for websocket');
+        setWsConnected(false);
+        return;
+      }
+
       try {
-        setLoading(true);
+        websocket = new WebSocket(`${wsBaseUrl}/api/pricing/ws/multi`);
 
-        if (selectedCommodity === 'gold') {
-          const response = await fetch('https://bf1bd891617c.ngrok-free.app/livechart_data', {
-            method: 'POST',
-            headers: {
-              accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              trading_pairs: 'xau_usd',
-              timezone: 'UTC',
-              interval: 3600,
-              sort: 'asc',
-              limit: 100,
-              offset: 7001
-            })
-          });
+        websocket.onopen = () => {
+          if (!isMounted) return;
+          console.log('WebSocket connected to gold price stream');
+          setWsConnected(true);
+          setWsReconnectAttempts(0);
+          websocket?.send(JSON.stringify({ action: 'subscribe', symbol: GOLD_WS_SYMBOL }));
+        };
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        websocket.onmessage = (event) => {
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(event.data as string);
+          } catch {
+            return;
           }
 
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            const textResponse = await response.text();
-            throw new Error(
-              `API did not return JSON. Content-Type: ${contentType}. Response: ${textResponse.substring(0, 100)}...`
-            );
+          if (!isMounted) return;
+          if (isTickPayload(parsed)) {
+            const midPrice = (parsed.bid + parsed.ask) / 2;
+            setPriceData((prev) => upsertTickToChart(prev, midPrice, parsed.timestamp));
+            setError(null);
+            return;
           }
 
-          const data: ApiResponse = await response.json();
-          setPriceData(data.data);
-          setError(null);
-        } else {
-          setPriceData(generateMockData(selectedCommodity));
-          setError(null);
-        }
+          const response = parsed as { error?: string };
+          if (response.error) {
+            console.error('WebSocket error message:', response.error);
+            setError(response.error);
+          }
+        };
+
+        websocket.onerror = (err) => {
+          console.error('WebSocket error:', err);
+          if (isMounted) {
+            setWsConnected(false);
+            setError('WebSocket connection error');
+          }
+        };
+
+        websocket.onclose = () => {
+          console.log('WebSocket connection closed');
+          if (isMounted) {
+            setWsConnected(false);
+
+            // Attempt to reconnect with exponential backoff
+            const reconnectDelay = Math.min(1000 * Math.pow(2, wsReconnectAttempts), 30000);
+            console.log(`Attempting to reconnect in ${reconnectDelay}ms...`);
+
+            reconnectTimer = setTimeout(() => {
+              if (isMounted && selectedCommodity === 'gold') {
+                setWsReconnectAttempts(prev => prev + 1);
+                connectGoldStream();
+              }
+            }, reconnectDelay);
+          }
+        };
       } catch (err) {
-        console.error('Error fetching chart data:', err);
-        setError('Failed to load chart data');
-        setPriceData(generateMockData(selectedCommodity));
-      } finally {
-        setLoading(false);
+        console.error('Failed to create WebSocket:', err);
+        if (isMounted) {
+          setWsConnected(false);
+          setError('Failed to create WebSocket connection');
+        }
       }
     };
 
-    fetchChartData();
-  }, [selectedCommodity]);
+    const loadMarketData = async () => {
+      setLoading(true);
+      try {
+        if (selectedCommodity !== 'gold') {
+          setPriceData(generateMockData(selectedCommodity));
+          setError(null);
+          return;
+        }
+
+        if (!apiBaseUrl) {
+          throw new Error('Missing VITE_BACKEND_API_BASE_URL');
+        }
+
+        const response = await fetch(`${apiBaseUrl}/api/pricing/ohlc/xau_usd?interval=3600&limit=100&sort=asc`);
+        if (!response.ok) {
+          throw new Error(`Failed to load gold history (${response.status})`);
+        }
+
+        const data = (await response.json()) as GoldOhlcApiItem[];
+        if (isMounted) {
+          setPriceData(mapGoldHistory(data));
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Error loading market data:', err);
+        if (isMounted) {
+          if (selectedCommodity === 'gold') {
+            // For gold, start with empty data and let WebSocket populate it
+            console.warn('OHLC endpoint failed, starting with empty chart. WebSocket will populate real-time data.');
+            setError('Historical data unavailable - showing live data only');
+            setPriceData([]);
+          } else {
+            setError('Failed to load chart data');
+            setPriceData(generateMockData(selectedCommodity));
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+
+      if (selectedCommodity === 'gold') {
+        connectGoldStream();
+      }
+    };
+
+    void loadMarketData();
+
+    return () => {
+      isMounted = false;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+      if (websocket?.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({ action: 'unsubscribe', symbol: GOLD_WS_SYMBOL }));
+      }
+      websocket?.close();
+    };
+  }, [apiBaseUrl, selectedCommodity, wsBaseUrl, wsReconnectAttempts]);
 
   const marketData = priceData.length > 0 ? {
     price: priceData[priceData.length - 1].Close,
@@ -253,11 +524,19 @@ const Market: React.FC = () => {
             <div className="p-6 border-b border-gold-500/10">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-white">Price Chart</h2>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Activity size={18} className="text-gray-400" />
                   {loading && <span className="text-sm text-amber-300">Loading...</span>}
-                  {error && <span className="text-sm text-rose-300">API Error</span>}
-                  {!loading && !error && <span className="text-sm text-emerald-300">Live Data</span>}
+                  {selectedCommodity === 'gold' && (
+                    <div className="flex items-center gap-2">
+                      <span className={`h-2 w-2 rounded-full ${wsConnected ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`} />
+                      <span className={`text-sm ${wsConnected ? 'text-emerald-300' : 'text-rose-300'}`}>
+                        {wsConnected ? 'WebSocket Live' : 'Reconnecting...'}
+                      </span>
+                    </div>
+                  )}
+                  {error && <span className="text-sm text-amber-300" title={error}>⚠ {error}</span>}
+                  {!loading && !error && selectedCommodity !== 'gold' && <span className="text-sm text-emerald-300">Mock Data</span>}
                 </div>
               </div>
             </div>
@@ -329,8 +608,16 @@ const Market: React.FC = () => {
                   <div className="h-80 flex items-center justify-center">
                     <div className="text-center">
                       <Activity size={44} className="mx-auto mb-3 text-gold-500" />
-                      <div className="text-gray-300">Loading chart data...</div>
-                      <div className="text-sm mt-2 text-gray-500">Chart with {timeframe} timeframe</div>
+                      <div className="text-gray-300">
+                        {selectedCommodity === 'gold'
+                          ? (wsConnected ? 'Waiting for live price data...' : 'Connecting to price stream...')
+                          : 'Loading chart data...'}
+                      </div>
+                      <div className="text-sm mt-2 text-gray-500">
+                        {selectedCommodity === 'gold' && wsConnected && 'WebSocket connected - data will appear as it arrives'}
+                        {selectedCommodity === 'gold' && !wsConnected && `Reconnection attempt ${wsReconnectAttempts + 1}...`}
+                        {selectedCommodity !== 'gold' && `Chart with ${timeframe} timeframe`}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -431,7 +718,9 @@ const Market: React.FC = () => {
 
               {priceData.length > 0 && (
                 <div className="mt-4 text-xs text-center text-gray-500">
-                  Showing {priceData.length} data points • Last updated: {new Date().toLocaleTimeString()}
+                  Showing {priceData.length} data points
+                  {selectedCommodity === 'gold' && wsConnected && ' • Live WebSocket feed'}
+                  {selectedCommodity === 'gold' && priceData.length > 0 && ` • Last: ${new Date(priceData[priceData.length - 1].Date_time).toLocaleTimeString()}`}
                 </div>
               )}
             </div>

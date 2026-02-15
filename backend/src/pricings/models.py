@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 
@@ -21,6 +21,11 @@ class WebSocketSymbol(str, Enum):
 
 
 class OHLCData(BaseModel):
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.isoformat()},
+        populate_by_name=True
+    )
+
     timestamp: datetime
     open: float
     high: float
@@ -31,6 +36,11 @@ class OHLCData(BaseModel):
 
 
 class TickData(BaseModel):
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.isoformat()},
+        populate_by_name=True
+    )
+
     symbol: str
     bid: float
     ask: float

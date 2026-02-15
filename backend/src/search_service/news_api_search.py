@@ -13,7 +13,13 @@ from src.search_service.base import (
     BaseSearchProvider,
     SearchResponse,
     SearchResult,
+    truncate_content,
+    truncate_combined_content,
+    MAX_CONTENT_PER_RESULT,
+    MAX_TOTAL_CONTENT,
+    MAX_RESULTS_FOR_SUMMARY,
 )
+from src.search_service.image_scraper import ImageScraper
 from src.app_config import app_config
 from src.llm import FallbackLLM
 import asyncio
@@ -24,12 +30,22 @@ class NewsAPISearchProvider(BaseSearchProvider):
 
     BASE_URL = "https://newsapi.org/v2"
 
-    def __init__(self, api_key: Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        enable_image_scraping: bool = True,
+        image_scraping_timeout: float = 5.0,
+        image_scraping_max_concurrent: int = 5,
+        **kwargs
+    ):
         """
         Initialize NewsAPI provider
 
         Args:
             api_key: NewsAPI key (defaults to app_config)
+            enable_image_scraping: Enable image scraping as fallback (default True)
+            image_scraping_timeout: Timeout for image scraping requests in seconds (default 5.0)
+            image_scraping_max_concurrent: Max concurrent image scraping requests (default 5)
             **kwargs: Additional configuration
         """
         super().__init__(api_key, **kwargs)
@@ -38,6 +54,17 @@ class NewsAPISearchProvider(BaseSearchProvider):
             raise ValueError(
                 "NewsAPI key is required. Set NEWS_API_KEY in .env or pass it directly."
             )
+
+        # Image scraping configuration
+        self.enable_image_scraping = enable_image_scraping
+        self.image_scraping_timeout = image_scraping_timeout
+        self.image_scraping_max_concurrent = image_scraping_max_concurrent
+
+        # Initialize image scraper if enabled
+        if self.enable_image_scraping:
+            self.image_scraper = ImageScraper(timeout=self.image_scraping_timeout)
+        else:
+            self.image_scraper = None
 
     @property
     def provider_name(self) -> str:
@@ -117,6 +144,33 @@ class NewsAPISearchProvider(BaseSearchProvider):
                 image_url=article.get("urlToImage"),
             ))
 
+        # Scrape images from URLs for results without images
+        if self.enable_image_scraping and self.image_scraper and search_results:
+            try:
+                # Find results that need image scraping (no image_url from API)
+                results_needing_images = [
+                    (idx, result) for idx, result in enumerate(search_results)
+                    if not result.image_url
+                ]
+
+                if results_needing_images:
+                    # Extract URLs that need scraping
+                    urls_to_scrape = [result.url for _, result in results_needing_images]
+
+                    # Batch scrape images concurrently
+                    image_urls = await self.image_scraper.scrape_images_batch(
+                        urls_to_scrape,
+                        max_concurrent=self.image_scraping_max_concurrent
+                    )
+
+                    # Assign scraped images to results
+                    for (idx, result), image_url in zip(results_needing_images, image_urls):
+                        if image_url and not isinstance(image_url, Exception):
+                            search_results[idx].image_url = image_url
+            except Exception as e:
+                print(f"Error during batch image scraping: {e}")
+                # Continue without images if scraping fails
+
         return SearchResponse(
             query=query,
             provider=self.provider_name,
@@ -195,6 +249,33 @@ class NewsAPISearchProvider(BaseSearchProvider):
                 source=article.get("source", {}).get("name"),
                 image_url=article.get("urlToImage"),
             ))
+
+        # Scrape images from URLs for results without images
+        if self.enable_image_scraping and self.image_scraper and search_results:
+            try:
+                # Find results that need image scraping (no image_url from API)
+                results_needing_images = [
+                    (idx, result) for idx, result in enumerate(search_results)
+                    if not result.image_url
+                ]
+
+                if results_needing_images:
+                    # Extract URLs that need scraping
+                    urls_to_scrape = [result.url for _, result in results_needing_images]
+
+                    # Batch scrape images concurrently
+                    image_urls = await self.image_scraper.scrape_images_batch(
+                        urls_to_scrape,
+                        max_concurrent=self.image_scraping_max_concurrent
+                    )
+
+                    # Assign scraped images to results
+                    for (idx, result), image_url in zip(results_needing_images, image_urls):
+                        if image_url and not isinstance(image_url, Exception):
+                            search_results[idx].image_url = image_url
+            except Exception as e:
+                print(f"Error during batch image scraping: {e}")
+                # Continue without images if scraping fails
 
         return SearchResponse(
             query=query or "top headlines",
@@ -283,6 +364,30 @@ class NewsAPISearchProvider(BaseSearchProvider):
                 image_url=article.get("urlToImage"),
             ))
 
+        # Scrape images from URLs for results without images (async operation)
+        if self.enable_image_scraping and self.image_scraper and search_results:
+            try:
+                async def scrape_missing_images():
+                    # Find results that need image scraping
+                    results_needing_images = [
+                        (idx, result) for idx, result in enumerate(search_results)
+                        if not result.image_url
+                    ]
+
+                    if results_needing_images:
+                        urls_to_scrape = [result.url for _, result in results_needing_images]
+                        image_urls = await self.image_scraper.scrape_images_batch(
+                            urls_to_scrape,
+                            max_concurrent=self.image_scraping_max_concurrent
+                        )
+                        for (idx, result), image_url in zip(results_needing_images, image_urls):
+                            if image_url and not isinstance(image_url, Exception):
+                                search_results[idx].image_url = image_url
+
+                asyncio.run(scrape_missing_images())
+            except Exception as e:
+                print(f"Error during batch image scraping: {e}")
+
         return SearchResponse(
             query=query,
             provider=self.provider_name,
@@ -362,6 +467,30 @@ class NewsAPISearchProvider(BaseSearchProvider):
                 image_url=article.get("urlToImage"),
             ))
 
+        # Scrape images from URLs for results without images (async operation)
+        if self.enable_image_scraping and self.image_scraper and search_results:
+            try:
+                async def scrape_missing_images():
+                    # Find results that need image scraping
+                    results_needing_images = [
+                        (idx, result) for idx, result in enumerate(search_results)
+                        if not result.image_url
+                    ]
+
+                    if results_needing_images:
+                        urls_to_scrape = [result.url for _, result in results_needing_images]
+                        image_urls = await self.image_scraper.scrape_images_batch(
+                            urls_to_scrape,
+                            max_concurrent=self.image_scraping_max_concurrent
+                        )
+                        for (idx, result), image_url in zip(results_needing_images, image_urls):
+                            if image_url and not isinstance(image_url, Exception):
+                                search_results[idx].image_url = image_url
+
+                asyncio.run(scrape_missing_images())
+            except Exception as e:
+                print(f"Error during batch image scraping: {e}")
+
         return SearchResponse(
             query=query or "top headlines",
             provider=self.provider_name,
@@ -375,7 +504,7 @@ class NewsAPISearchProvider(BaseSearchProvider):
             }
         )
 
-    def summarize_results(self, query: str, response: SearchResponse) -> str:
+    async def summarize_results(self, query: str, response: SearchResponse) -> str:
         """
         Summarize news results using LLM with a structured extraction format.
 
@@ -398,20 +527,24 @@ class NewsAPISearchProvider(BaseSearchProvider):
             return "No news results found."
 
         content_parts = []
-        for result in response.results[:10]:
+        for result in response.results[:MAX_RESULTS_FOR_SUMMARY]:
             # For news, we may not have scraped content, so use snippet or content
             text_content = result.content or result.snippet or ""
             if not text_content.strip():
                 continue  # ignore empty content sources
 
+            # Truncate content to prevent context overflow
+            text_content = truncate_content(text_content, MAX_CONTENT_PER_RESULT)
             published_str = result.published_at.strftime("%Y-%m-%d %H:%M") if result.published_at else "Unknown"
             source_str = result.source or "Unknown"
+            image_url_str = result.image_url or "N/A"
 
             content_parts.append(f"""
 Title: {result.title}
 Source: {source_str}
 Published: {published_str}
 URL: {result.url}
+Image URL: {image_url_str}
 Content:
 {text_content}
 ---
@@ -421,6 +554,8 @@ Content:
             return "No valid content found in news results."
 
         combined_content = "\n".join(content_parts)
+        # Truncate combined content to prevent LLM context overflow
+        combined_content = truncate_combined_content(combined_content, MAX_TOTAL_CONTENT)
 
         system_prompt = f"""
 You are a helpful assistant that extracts and synthesizes information from news articles.
@@ -442,32 +577,38 @@ Output format:
 - Url: original source URL
 - Source: news source name
 - Published: publication date
+- Image link: image URL if available
 
 News articles:
 {combined_content}
 """
 
+        # Capture original results before LLM call (to avoid variable shadowing)
+        news_results = response.results
+
         try:
-            llm = FallbackLLM(model="gpt-5-nano")
-            result = llm.invoke(system_prompt)
-            # Extract content from AIMessage if needed
-            return result.content if hasattr(result, 'content') else str(result)
+            llm = FallbackLLM(model="gpt-4.1-nano")
+            # Use ainvoke() - returns AIMessage with .content attribute
+            llm_response = await llm.ainvoke(system_prompt)
+            return llm_response.content
 
         except Exception as e:
             print(f"Error in summarization: {e}")
             # fallback: minimal structured output
             fallback = ""
-            for result in response.results[:10]:
+            for result in news_results[:10]:
                 text_content = result.content or result.snippet or ""
                 if not text_content:
                     continue
                 published_str = result.published_at.strftime("%Y-%m-%d %H:%M") if result.published_at else "Unknown"
+                image_url_str = result.image_url or "N/A"
                 fallback += f"""- Headline: {result.title}
 - Summary: {text_content[:200]}...
 - Long content: {text_content[:500]}...
 - Url: {result.url}
 - Source: {result.source or 'Unknown'}
 - Published: {published_str}
+- Image link: {image_url_str}
 
 """
             return fallback
@@ -505,8 +646,11 @@ News articles:
             query, max_results, from_date, to_date, sort_by,
             language, domains, exclude_domains, **kwargs
         )
-        summary = self.summarize_results(query, response)
-
+        print("News API Search Response:")
+        print(response)
+        print("News API Search Summary:")
+        summary = await self.summarize_results(query, response)
+        print(summary)
         return {
             'provider': self.provider_name,
             'response': response,

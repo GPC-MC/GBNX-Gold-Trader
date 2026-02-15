@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { PriceProvider } from './contexts/PriceContext';
 import { router } from './app/router';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { bootstrapRequested } from './store/slices/appSlice';
@@ -17,29 +18,31 @@ function App() {
 
   return (
     <AuthProvider>
-      <div className={styles.appRoot}>
-        <RouterProvider router={router} />
+      <PriceProvider>
+        <div className={styles.appRoot}>
+          <RouterProvider router={router} />
 
-        {bootstrapping && (
-          <div className={styles.bootstrapOverlay} role="status" aria-live="polite">
-            <div className={styles.bootstrapPanel}>
-              <p className={styles.bootstrapTitle}>Application Init</p>
-              <p className={styles.bootstrapText}>Bootstrapping trading workspace...</p>
-              <p className={styles.bootstrapSubtle}>Redux Toolkit + redux-saga flow active</p>
+          {bootstrapping && (
+            <div className={styles.bootstrapOverlay} role="status" aria-live="polite">
+              <div className={styles.bootstrapPanel}>
+                <p className={styles.bootstrapTitle}>Application Init</p>
+                <p className={styles.bootstrapText}>Bootstrapping trading workspace...</p>
+                <p className={styles.bootstrapSubtle}>Redux Toolkit + redux-saga flow active</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {bootstrapError && !bootstrapping && (
-          <div className={styles.bootstrapOverlay} role="alert" aria-live="assertive">
-            <div className={styles.bootstrapPanel}>
-              <p className={styles.bootstrapTitle}>Bootstrap Error</p>
-              <p className={styles.bootstrapText}>{bootstrapError}</p>
-              <p className={styles.bootstrapSubtle}>Reload to retry initialization</p>
+          {bootstrapError && !bootstrapping && (
+            <div className={styles.bootstrapOverlay} role="alert" aria-live="assertive">
+              <div className={styles.bootstrapPanel}>
+                <p className={styles.bootstrapTitle}>Bootstrap Error</p>
+                <p className={styles.bootstrapText}>{bootstrapError}</p>
+                <p className={styles.bootstrapSubtle}>Reload to retry initialization</p>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      </PriceProvider>
     </AuthProvider>
   );
 }

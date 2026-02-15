@@ -58,6 +58,7 @@ async def websocket_price_feed(websocket: WebSocket, symbol: str):
 @router.websocket("/multi")
 async def websocket_multi_price_feed(websocket: WebSocket):
     await websocket.accept()
+    print("WebSocket multi price feed connection accepted")
 
     subscribed_symbols = set()
     callbacks = {}
@@ -65,19 +66,24 @@ async def websocket_multi_price_feed(websocket: WebSocket):
     async def handle_subscription(symbol: str):
         try:
             ws_symbol = WebSocketSymbol(f"ticks:{symbol}")
-        except ValueError:
+            print(f"Subscribing to symbol: {symbol} -> {ws_symbol}")
+        except ValueError as e:
+            print(f"Invalid symbol: {symbol}, error: {e}")
             await websocket.send_json({"error": f"Invalid symbol: {symbol}"})
             return
 
         async def send_tick(tick: TickData):
             try:
-                await websocket.send_json(tick.model_dump(mode='json'))
-            except Exception:
-                pass
+                tick_data = tick.model_dump(mode='json')
+                print(f"Sending tick to client: {symbol} - bid: {tick.bid}, ask: {tick.ask}")
+                await websocket.send_json(tick_data)
+            except Exception as e:
+                print(f"Error sending tick: {e}")
 
         callbacks[symbol] = send_tick
         subscribed_symbols.add(symbol)
         await stream_manager.subscribe(ws_symbol, send_tick)
+        print(f"Successfully subscribed to {symbol}")
 
     async def handle_unsubscription(symbol: str):
         if symbol in subscribed_symbols:
