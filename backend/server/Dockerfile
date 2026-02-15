@@ -1,12 +1,12 @@
 FROM ghcr.io/astral-sh/uv:python3.11-bookworm
 
-WORKDIR /app
+WORKDIR /data
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_LINK_MODE=copy \
-    PATH="/app/.venv/bin:${PATH}" \
-    PYTHONPATH=.
+    PATH="/data/.venv/bin:${PATH}" \
+    PYTHONPATH=/data
 
 # System dependencies commonly needed by Python packages in this project
 RUN apt-get update \
@@ -23,6 +23,10 @@ RUN uv sync --frozen --no-dev
 # Copy application code
 COPY src ./src
 COPY main.py ./main.py
+
+# Create all necessary directories under /data
+RUN mkdir -p /data/logs /data/cache /data/uploads /data/temp && \
+    chmod -R 777 /data/logs /data/cache /data/uploads /data/temp
 
 EXPOSE 8081
 

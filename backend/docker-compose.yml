@@ -12,10 +12,10 @@ services:
       # You can override env vars here or use the .env file in the image
       - PORT=8081
     volumes:
-      # Mount logs directory for persistent logs
-      - ./logs:/app/logs
+      # Mount /data directory for all persistent data
+      - ./data:/data
       # Optional: Mount .env file if you want to change it without rebuilding
-      - ./.env:/app/.env:ro
+      - ./.env:/data/.env:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/"]
