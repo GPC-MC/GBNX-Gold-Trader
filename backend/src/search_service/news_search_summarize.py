@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -30,8 +30,8 @@ class SentimentClass(str, Enum):
 class SentimentOutput(BaseModel):
     article_index: int = Field(ge=1)
     sentiment: SentimentClass
-    reasoning: str = Field(min_length=20, max_length=800)
-    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str = Field(min_length=10, max_length=1500, description="Concise explanation of the sentiment classification")
+    confidence: float = Field(ge=0.0, le=1.0, description="Confidence score between 0.0 and 1.0")
 
 
 class SentimentBatchOutput(BaseModel):
@@ -74,9 +74,10 @@ Rules:
 - "Bullish" means news context likely supports higher gold prices or safe-haven demand.
 - "Bearish" means news context likely pressures gold lower (e.g., stronger USD/yields, risk-on).
 - "Neutral" means mixed/unclear signals or insufficient evidence.
-- Reasoning must be concise and factual for that specific article.
-- Confidence is a float from 0 to 1 based on clarity and consistency of evidence.
-- You MUST return one item per article and map correctly by article_index.
+- Reasoning MUST be between 10-1500 characters, concise and factual for that specific article.
+- Confidence MUST be a decimal number between 0.0 and 1.0 based on clarity and consistency of evidence.
+- You MUST return one item per article and map correctly by article_index (starting from 1).
+- Return valid JSON with the exact structure: {"items": [{"article_index": int, "sentiment": "bullish"|"bearish"|"neutral", "reasoning": str, "confidence": float}]}
 """
 
 
@@ -94,7 +95,7 @@ class NewsSentimentAnalyzer:
             model=model,
             system_prompt=SYSTEM_PROMPT,
             output_type=SentimentBatchOutput,
-            retries=1,
+            retries=2,
         )
         self.max_articles_for_context = max_articles_for_context
 
@@ -135,7 +136,7 @@ class NewsSentimentAnalyzer:
 
         return NewsSentimentResult(
             query=query,
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(timezone.utc),
             sentiments=per_news,
             raw_articles=raw_articles,
         )
@@ -165,7 +166,7 @@ class NewsSentimentAnalyzer:
     ) -> str:
         lines = [
             f"Query: {query}",
-            f"Today: {datetime.utcnow().strftime('%Y-%m-%d')}",
+            f"Today: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}",
             "Raw articles:",
             "Return format requirements:",
             "- Return JSON with key `items`.",

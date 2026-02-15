@@ -41,7 +41,16 @@ async def analyze_news_sentiment(req: NewsSentimentRequest):
             search_recency_filter=req.recency,
         )
     except ValueError as e:
+        logger.error(f"Validation error in news sentiment analysis: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception("Failed to analyze per-news sentiment")
-        raise HTTPException(status_code=500, detail=f"Failed to analyze sentiment: {e}")
+        logger.exception(f"Failed to analyze per-news sentiment: {type(e).__name__}: {e}")
+        # Provide more specific error message for common issues
+        error_msg = str(e)
+        if "output validation" in error_msg.lower():
+            detail = "AI model output validation failed. The model may have returned invalid data. Please try again."
+        elif "timeout" in error_msg.lower():
+            detail = "Request timeout. Please try with fewer articles or a simpler query."
+        else:
+            detail = f"Failed to analyze sentiment: {error_msg}"
+        raise HTTPException(status_code=500, detail=detail)
