@@ -32,6 +32,8 @@ from src.search_service.unified_search import UnifiedSearchService
 from src.search_service.news_search_summarize import (
     NewsSentimentAnalyzer,
     NewsSentimentResult,
+    PerNewsSentiment,
+    SentimentBatchOutput,
     SentimentOutput,
 )
 
@@ -46,6 +48,8 @@ __all__ = [
     "UnifiedSearchService",
     "NewsSentimentAnalyzer",
     "NewsSentimentResult",
+    "PerNewsSentiment",
+    "SentimentBatchOutput",
     "SentimentOutput",
     # Content truncation utilities
     "truncate_content",
