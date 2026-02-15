@@ -15,6 +15,11 @@ import type { LucideIcon } from 'lucide-react';
 import { useGoldData } from '../../hooks/useGoldData';
 import { useAuth } from '../../contexts/AuthContext';
 import type { GoldPrice, Portfolio } from '../../types';
+import {
+  fallbackNewsSignals,
+  fetchNewsSignals,
+  type NewsSignalArticle,
+} from '../../services/newsApi';
 
 type WidgetId = 'price' | 'news' | 'assistant' | 'portfolio' | 'actions';
 
@@ -23,14 +28,6 @@ interface WidgetOption {
   title: string;
   description: string;
   icon: LucideIcon;
-}
-
-interface NewsArticle {
-  title: string;
-  source_url: string;
-  source_name: string;
-  market_impact?: 'bullish' | 'bearish' | 'neutral';
-  impact_level?: 'high' | 'medium' | 'low';
 }
 
 const MAX_WIDGETS = 4;
@@ -255,7 +252,7 @@ const AssistantWidget: React.FC = () => (
 );
 
 const MarketNewsWidget: React.FC = () => {
-  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [news, setNews] = useState<NewsSignalArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -263,51 +260,19 @@ const MarketNewsWidget: React.FC = () => {
 
     const fetchNews = async () => {
       try {
-        const response = await fetch('https://bf1bd891617c.ngrok-free.app/latest_news', {
-          method: 'POST',
-          headers: {
-            accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ keyword: 'gold' })
+        const articles = await fetchNewsSignals({
+          query: 'latest gold market news',
+          maxResults: 6,
+          maxArticles: 6,
+          recency: 'week',
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const articles = Array.isArray(data?.articles) ? data.articles : [];
-
         if (isMounted) {
           setNews(articles);
         }
       } catch (error) {
         console.error('Error fetching news:', error);
         if (isMounted) {
-          setNews([
-            {
-              title: 'Gold extends rally as macro uncertainty grows',
-              source_url: 'https://www.reuters.com',
-              source_name: 'reuters.com',
-              market_impact: 'bullish',
-              impact_level: 'high'
-            },
-            {
-              title: 'Fed tone keeps metals bid despite stronger dollar',
-              source_url: 'https://www.bloomberg.com',
-              source_name: 'bloomberg.com',
-              market_impact: 'neutral',
-              impact_level: 'medium'
-            },
-            {
-              title: 'ETF inflows resume as investors seek hedges',
-              source_url: 'https://www.cnbc.com',
-              source_name: 'cnbc.com',
-              market_impact: 'bullish',
-              impact_level: 'medium'
-            }
-          ]);
+          setNews(fallbackNewsSignals);
         }
       } finally {
         if (isMounted) {

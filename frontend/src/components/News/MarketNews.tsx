@@ -1,25 +1,35 @@
 import React, { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { Globe, RefreshCw, TrendingUp, Zap, Newspaper, AlertTriangle } from 'lucide-react';
+import {
+  fallbackNewsSignals,
+  fetchNewsSignals,
+  type NewsSignalArticle,
+} from '../../services/newsApi';
 
-interface NewsArticle {
-  title: string;
-  summary: string;
-  source_url: string;
-  source_name: string;
-  sentiment?: 'positive' | 'negative' | 'neutral';
-  ai_reasoning?: string;
-  market_impact?: 'bullish' | 'bearish' | 'neutral';
-  impact_level?: 'high' | 'medium' | 'low'; // Tier 1, 2, 3
-}
+const getPublishedLabel = (publishedAt?: string) => {
+  if (!publishedAt) {
+    return 'Recent';
+  }
 
-interface NewsResponse {
-  articles: NewsArticle[];
-  count: number;
-}
+  const timestamp = Date.parse(publishedAt);
+  if (Number.isNaN(timestamp)) {
+    return 'Recent';
+  }
+
+  const diffMs = Date.now() - timestamp;
+  const diffHours = Math.max(0, Math.round(diffMs / (1000 * 60 * 60)));
+  if (diffHours < 1) {
+    return 'Just now';
+  }
+  if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  }
+  return `${Math.round(diffHours / 24)}d ago`;
+};
 
 const MarketNews: React.FC = () => {
-  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [news, setNews] = useState<NewsSignalArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [refreshingNews, setRefreshingNews] = useState(false);
 
@@ -35,103 +45,16 @@ const MarketNews: React.FC = () => {
         setNewsLoading(true);
       }
 
-      const response = await fetch('https://bf1bd891617c.ngrok-free.app/latest_news', {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          keyword: 'gold'
-        })
+      const signals = await fetchNewsSignals({
+        query: 'latest news about gold',
+        maxResults: 10,
+        maxArticles: 10,
+        recency: 'week',
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: NewsResponse = await response.json();
-      setNews(data.articles || []);
+      setNews(signals);
     } catch (err) {
       console.error('Error fetching news:', err);
-      const mockNews: NewsArticle[] = [
-        // Tier 1: Hero News
-        {
-          title: 'Gold Eclipses $3,900 as Government Shutdown Begins',
-          summary:
-            'Gold futures opened at a record $3,887.70 per ounce and later pushed above $3,900 amid heightened safe-haven demand triggered by the U.S. government shutdown.',
-          source_url: 'https://finance.yahoo.com/gold-shutdown',
-          source_name: 'finance.yahoo.com',
-          sentiment: 'positive',
-          ai_reasoning:
-            'Government shutdown historically increases safe-haven demand → bullish bias likely to persist short-term.',
-          market_impact: 'bullish',
-          impact_level: 'high'
-        },
-        // Tier 2: Directional Signals (Bullish)
-        {
-          title: 'Gold hits record high as Rate Cut bets increase',
-          summary:
-            'Spot gold reached a record high driven by heightened expectations of an interest rate cut by the Federal Reserve next month.',
-          source_url: 'https://www.reuters.com/gold-record-high',
-          source_name: 'reuters.com',
-          sentiment: 'positive',
-          ai_reasoning:
-            'Lower rates reduce opportunity cost of holding non-yielding bullion → gold typically rallies.',
-          market_impact: 'bullish',
-          impact_level: 'medium'
-        },
-        // Tier 2: Directional Signals (Bearish)
-        {
-          title: 'Central Banks Reduce Gold Reserves in Q4',
-          summary:
-            'Major central banks have reduced their gold holdings by 2.3% in Q4, signaling increased confidence in traditional currency markets.',
-          source_url: 'https://www.bloomberg.com/central-banks-gold',
-          source_name: 'bloomberg.com',
-          sentiment: 'negative',
-          ai_reasoning:
-            'Institutional selling pressure creates overhead resistence → short-term bearish correction possible.',
-          market_impact: 'bearish',
-          impact_level: 'medium'
-        },
-        // Tier 2: Directional Signals (Bearish)
-        {
-          title: 'Dollar Strength Weighs on Precious Metals',
-          summary:
-            'The U.S. dollar index rose 1.5% this week as economic data exceeded expectations, putting pressure on gold prices.',
-          source_url: 'https://www.marketwatch.com/dollar-strength',
-          source_name: 'marketwatch.com',
-          sentiment: 'negative',
-          ai_reasoning:
-            'Stronger USD makes gold more expensive for foreign buyers → inverse correlation pressures price down.',
-          market_impact: 'bearish',
-          impact_level: 'medium'
-        },
-        // Tier 3: Context
-        {
-          title: 'Mining Output Remains Stable Despite Geopolitical Tensions',
-          summary:
-            'Global gold mining production maintained steady levels despite ongoing geopolitical tensions in key regions.',
-          source_url: 'https://www.mining.com/gold-production',
-          source_name: 'mining.com',
-          sentiment: 'neutral',
-          ai_reasoning:
-            'Supply chain functionality remains intact → Neutral supply-side impact.',
-          market_impact: 'neutral',
-          impact_level: 'low'
-        },
-        {
-          title: 'Jewelry Demand in India Shows Slight Uptick',
-          summary: 'Physical demand in India increased by 2% ahead of festival season, providing some floor support.',
-          source_url: 'https://www.cnbc.com/gold-india',
-          source_name: 'cnbc.com',
-          sentiment: 'neutral',
-          ai_reasoning: 'Seasonal physical demand supports base prices but unlikely to drive major trend.',
-          market_impact: 'neutral',
-          impact_level: 'low'
-        }
-      ];
-      setNews(mockNews);
+      setNews(fallbackNewsSignals);
     } finally {
       setNewsLoading(false);
       setRefreshingNews(false);
@@ -251,7 +174,7 @@ const MarketNews: React.FC = () => {
                         <div className="inline-flex items-center gap-2 text-xs font-medium text-gold-500/80">
                           <span>{article.source_name}</span>
                           <span className="w-1 h-1 rounded-full bg-gray-600" />
-                          <span>Just now</span>
+                          <span>{getPublishedLabel(article.published_at)}</span>
                         </div>
                         <a href={article.source_url} target="_blank" rel="noopener noreferrer" className="block group-hover:opacity-80 transition-opacity">
                           <h3 className="text-2xl sm:text-3xl font-bold text-white leading-tight">

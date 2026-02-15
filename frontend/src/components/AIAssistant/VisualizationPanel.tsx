@@ -2,6 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import clsx from 'clsx';
 import Plot from 'react-plotly.js';
 import { AlertTriangle, Globe, Shield, Target } from 'lucide-react';
+import {
+  fallbackNewsSignals,
+  fetchNewsSignals,
+  type NewsSignalArticle,
+} from '../../services/newsApi';
 
 interface VisualizationPanelProps {
   activeVisualization: 'chart' | 'trade' | 'risk' | 'news';
@@ -28,23 +33,11 @@ interface ApiResponse {
   data: ChartDataPoint[];
 }
 
-interface NewsArticle {
-  title: string;
-  summary: string;
-  source_url: string;
-  source_name: string;
-}
-
-interface NewsResponse {
-  articles: NewsArticle[];
-  count: number;
-}
-
 const VisualizationPanel: React.FC<VisualizationPanelProps> = ({ activeVisualization }) => {
   const [priceData, setPriceData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [aiNews, setAiNews] = useState<NewsArticle[]>([]);
+  const [aiNews, setAiNews] = useState<NewsSignalArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
 
   useEffect(() => {
@@ -108,44 +101,16 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({ activeVisualiza
     const fetchAINews = async () => {
       try {
         setNewsLoading(true);
-        const response = await fetch('https://bf1bd891617c.ngrok-free.app/latest_news', {
-          method: 'POST',
-          headers: {
-            accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            keyword: 'gold'
-          })
+        const signals = await fetchNewsSignals({
+          query: 'latest gold market news',
+          maxResults: 6,
+          maxArticles: 6,
+          recency: 'week',
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: NewsResponse = await response.json();
-        setAiNews(data.articles || []);
+        setAiNews(signals);
       } catch (err) {
         console.error('Error fetching AI news:', err);
-        const mockNews: NewsArticle[] = [
-          {
-            title: 'Gold Eclipses $3,900 as Government Shutdown Begins',
-            summary:
-              'Gold futures opened at a record $3,887.70 per ounce and later pushed above $3,900 amid heightened safe-haven demand.',
-            source_url:
-              'https://finance.yahoo.com/personal-finance/investing/article/gold-price-today-wednesday-october-1-gold-eclipses-3900-as-government-shutdown-begins-113229852.html',
-            source_name: 'finance.yahoo.com'
-          },
-          {
-            title: 'Gold hits record high as US government shuts down',
-            summary:
-              'Spot gold reached a record high, fueled by safe-haven demand amid a U.S. government shutdown and expectations of a rate cut.',
-            source_url:
-              'https://www.reuters.com/world/india/gold-hits-record-high-us-shutdown-risks-rate-cut-bets-2025-10-01/',
-            source_name: 'reuters.com'
-          }
-        ];
-        setAiNews(mockNews);
+        setAiNews(fallbackNewsSignals);
       } finally {
         setNewsLoading(false);
       }
@@ -483,8 +448,15 @@ const VisualizationPanel: React.FC<VisualizationPanelProps> = ({ activeVisualiza
             aiNews.slice(0, 3).map((article, index) => (
               <div key={index} className="rounded-xl border border-gold-500/10 bg-ink-800/55 p-4">
                 <div className="flex items-start justify-between gap-4 mb-2">
-                  <div className="text-xs bg-sky-500/15 text-sky-300 border border-sky-500/20 px-2 py-1 rounded">
-                    LIVE
+                  <div className={clsx(
+                    'text-xs border px-2 py-1 rounded uppercase tracking-wide',
+                    article.market_impact === 'bullish'
+                      ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                      : article.market_impact === 'bearish'
+                        ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                        : 'bg-sky-500/15 text-sky-300 border-sky-500/20'
+                  )}>
+                    {article.market_impact}
                   </div>
                   <span className="text-xs text-gray-500">{article.source_name}</span>
                 </div>
