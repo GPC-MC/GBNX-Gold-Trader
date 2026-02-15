@@ -30,6 +30,21 @@ const getPublishedLabel = (publishedAt?: string) => {
   return `${Math.round(diffHours / 24)}d ago`;
 };
 
+const getImpactLabel = (impact?: string) => {
+  if (!impact) return 'Neutral';
+  return impact.charAt(0).toUpperCase() + impact.slice(1).toLowerCase();
+};
+
+const getImpactChipClass = (impact?: string) => {
+  if (impact === 'bullish') {
+    return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25';
+  }
+  if (impact === 'bearish') {
+    return 'bg-rose-500/10 text-rose-300 border-rose-500/25';
+  }
+  return 'bg-slate-500/10 text-slate-300 border-slate-500/25';
+};
+
 const MarketNews: React.FC = () => {
   const [news, setNews] = useState<NewsSignalArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
@@ -104,13 +119,15 @@ const MarketNews: React.FC = () => {
     (!n.impact_level && (n.market_impact === 'neutral' || !n.market_impact))
   );
 
+  const featuredHighImpact = tier1News[0];
+  const secondaryHighImpact = tier1News.slice(1);
 
   const renderAIInsight = (text: string, isHero = false) => (
     <div className={clsx(
       "relative overflow-hidden rounded-xl border flex flex-col justify-center",
       isHero
-        ? "bg-gold-500/20 border-gold-500/30 p-4"
-        : "bg-ink-900/60 border-gold-500/15 p-3 mt-auto"
+        ? "bg-gold-500/15 border-gold-500/30 p-3"
+        : "bg-ink-900/60 border-gold-500/15 p-2.5 mt-auto"
     )}>
       {/* Background accent */}
       {!isHero && <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-gold-400/5 blur-2xl rounded-full pointer-events-none" />}
@@ -124,14 +141,14 @@ const MarketNews: React.FC = () => {
         </div>
         <span className={clsx(
           "font-bold tracking-wider",
-          isHero ? "text-gold-300 text-sm" : "text-gold-500/90 text-[10px] uppercase"
+          isHero ? "text-gold-300 text-xs uppercase" : "text-gold-500/90 text-[10px] uppercase"
         )}>
           {isHero ? "AI SIGNAL REASONING" : "SIGNAL INSIGHT"}
         </span>
       </div>
       <p className={clsx(
-        "leading-relaxed font-medium",
-        isHero ? "text-gold-100/90 text-base" : "text-gray-300 text-xs"
+        "leading-relaxed",
+        isHero ? "text-gold-100/90 text-sm" : "text-gray-300 text-xs"
       )}>
         {text}
       </p>
@@ -139,16 +156,16 @@ const MarketNews: React.FC = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
       {/* Header */}
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between border-b border-gold-500/15 pb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gold-500/15 pb-5">
         <div className="flex items-center gap-3">
           <div className="h-12 w-12 rounded-2xl border border-gold-500/15 bg-gradient-to-br from-ink-800 to-ink-900 flex items-center justify-center shadow-lg shadow-black/20">
             <Globe size={24} className="text-gold-300" />
           </div>
           <div>
             <div className="text-xs font-bold tracking-[0.2em] text-gold-500 uppercase">Signal Board</div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Market News</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">Market News</h1>
           </div>
         </div>
 
@@ -168,7 +185,7 @@ const MarketNews: React.FC = () => {
       </div>
 
       {newsLoading ? (
-        <div className="flex flex-col items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center py-16">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mb-6"></div>
           <div className="w-full max-w-md">
             <div className="mb-2 flex items-center justify-between text-xs tracking-[0.16em] uppercase">
@@ -184,50 +201,89 @@ const MarketNews: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="space-y-12">
+        <div className="space-y-8">
 
           {/* TIER 1: MARKET MOVING (HERO NEWS) */}
-          {tier1News.length > 0 && (
+          {featuredHighImpact && (
             <section>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3">
                 <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Market Moving</h2>
+                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Market Moving</h2>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {tier1News.map((article, idx) => (
-                  <div key={idx} className="col-span-1 lg:col-span-2 group relative overflow-hidden rounded-3xl border border-gold-500/30 bg-gradient-to-br from-ink-800/80 to-ink-900/80 backdrop-blur-md p-6 sm:p-8 shadow-2xl shadow-black/50 transition-all hover:border-gold-500/50">
-                    <div className="absolute top-0 right-0 p-6">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500 text-white px-3 py-1 text-xs font-bold shadow-lg shadow-rose-900/20">
-                        <AlertTriangle size={12} strokeWidth={3} />
-                        HIGH IMPACT
+
+              <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-4">
+                <article className="group relative overflow-hidden rounded-2xl border border-gold-500/30 bg-gradient-to-br from-ink-800/80 to-ink-900/80 backdrop-blur-md p-5 shadow-xl shadow-black/30 transition-all hover:border-gold-500/50">
+                  <div className="absolute top-4 right-4">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500 text-white px-2.5 py-1 text-[10px] font-bold shadow-lg shadow-rose-900/20">
+                      <AlertTriangle size={10} strokeWidth={3} />
+                      HIGH IMPACT
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 pr-24">
+                    <div className="inline-flex items-center gap-2 text-[11px] font-medium text-gold-500/80">
+                      <span>{featuredHighImpact.source_name}</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-600" />
+                      <span>{getPublishedLabel(featuredHighImpact.published_at)}</span>
+                    </div>
+                    <div>
+                      <span className={clsx(
+                        'inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider',
+                        getImpactChipClass(featuredHighImpact.market_impact),
+                      )}>
+                        {getImpactLabel(featuredHighImpact.market_impact)}
                       </span>
                     </div>
+                    <a href={featuredHighImpact.source_url} target="_blank" rel="noopener noreferrer" className="block group-hover:opacity-90 transition-opacity">
+                      <h3 className="text-xl sm:text-2xl font-semibold text-white leading-snug">
+                        {featuredHighImpact.title}
+                      </h3>
+                    </a>
+                    <p className="text-sm text-gray-300 leading-relaxed line-clamp-4">
+                      {featuredHighImpact.summary}
+                    </p>
+                    {featuredHighImpact.ai_reasoning && renderAIInsight(featuredHighImpact.ai_reasoning, true)}
+                  </div>
+                </article>
 
-                    <div className="flex flex-col md:flex-row gap-8">
-                      <div className="flex-1 space-y-4">
-                        <div className="inline-flex items-center gap-2 text-xs font-medium text-gold-500/80">
+                <div className="space-y-3">
+                  {secondaryHighImpact.length > 0 ? (
+                    secondaryHighImpact.slice(0, 3).map((article, idx) => (
+                      <article
+                        key={`${article.source_url}-${idx}`}
+                        className="rounded-xl border border-gold-500/15 bg-ink-900/60 p-3 hover:border-gold-500/30 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.15em] text-gray-500 mb-2">
                           <span>{article.source_name}</span>
-                          <span className="w-1 h-1 rounded-full bg-gray-600" />
                           <span>{getPublishedLabel(article.published_at)}</span>
                         </div>
-                        <a href={article.source_url} target="_blank" rel="noopener noreferrer" className="block group-hover:opacity-80 transition-opacity">
-                          <h3 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
+                        <div className="mb-2">
+                          <span className={clsx(
+                            'inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                            getImpactChipClass(article.market_impact),
+                          )}>
+                            {getImpactLabel(article.market_impact)}
+                          </span>
+                        </div>
+                        <a href={article.source_url} target="_blank" rel="noopener noreferrer" className="block">
+                          <h4 className="text-sm font-semibold text-gray-100 leading-snug line-clamp-2 hover:text-white transition-colors">
                             {article.title}
-                          </h3>
+                          </h4>
                         </a>
-                        <p className="text-gray-300 text-lg leading-relaxed max-w-2xl">
+                        <p className="mt-1 text-xs text-gray-400 line-clamp-2">
                           {article.summary}
                         </p>
-                      </div>
-
-                      {article.ai_reasoning && (
-                        <div className="w-full md:w-80 shrink-0 self-stretch flex">
-                          {renderAIInsight(article.ai_reasoning, true)}
-                        </div>
-                      )}
+                        <p className="mt-2 text-[11px] text-gray-300 line-clamp-2">
+                          {article.ai_reasoning}
+                        </p>
+                      </article>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-gold-500/15 bg-ink-900/60 p-4 text-sm text-gray-400">
+                      Monitoring additional high-impact headlines...
                     </div>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
             </section>
           )}
@@ -235,11 +291,11 @@ const MarketNews: React.FC = () => {
           {/* TIER 2: DIRECTIONAL SIGNALS */}
           {tier2News.length > 0 && (
             <section>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3">
                 <TrendingUp size={16} className="text-gray-400" />
-                <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Directional Signals</h2>
+                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Directional Signals</h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {tier2News.map((article, idx) => {
                   const isBullish = article.market_impact === 'bullish';
                   const BorderColorClass = isBullish ? 'border-emerald-500/20 hover:border-emerald-500/40' : 'border-rose-500/20 hover:border-rose-500/40';
@@ -247,25 +303,25 @@ const MarketNews: React.FC = () => {
 
                   return (
                     <div key={idx} className={clsx(
-                      "rounded-2xl border p-5 flex flex-col transition-all duration-300 group backdrop-blur-sm",
+                      "rounded-xl border p-4 flex flex-col transition-all duration-300 group backdrop-blur-sm",
                       BorderColorClass,
                       BgColorClass
                     )}>
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-3">
                         <span className={clsx(
                           "text-[10px] font-bold px-2 py-0.5 rounded border uppercase tracking-wider",
                           isBullish ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"
                         )}>
-                          {article.market_impact}
+                          {getImpactLabel(article.market_impact)}
                         </span>
                         <span className="text-xs text-gray-500 font-medium">{article.source_name}</span>
                       </div>
 
                       <a href={article.source_url} target="_blank" rel="noopener noreferrer" className="block mb-4">
-                        <h3 className="text-lg font-bold text-gray-100 mb-2 leading-snug group-hover:text-white transition-colors">
+                        <h3 className="text-base font-semibold text-gray-100 mb-2 leading-snug group-hover:text-white transition-colors">
                           {article.title}
                         </h3>
-                        <p className="text-sm text-gray-400 line-clamp-2">
+                        <p className="text-xs text-gray-400 line-clamp-2">
                           {article.summary}
                         </p>
                       </a>
@@ -281,13 +337,22 @@ const MarketNews: React.FC = () => {
           {/* TIER 3: CONTEXT & BACKGROUND */}
           {tier3News.length > 0 && (
             <section>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-3">
                 <Newspaper size={16} className="text-gray-500" />
-                <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Market Context</h2>
+                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">Market Context</h2>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {tier3News.map((article, idx) => (
-                  <div key={idx} className="rounded-xl border border-gold-500/15 bg-ink-850/30 p-4 hover:bg-ink-850/50 transition-colors">
+                  <div key={idx} className="rounded-xl border border-gold-500/15 bg-ink-850/30 p-3 hover:bg-ink-850/50 transition-colors">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className={clsx(
+                        'inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                        getImpactChipClass(article.market_impact),
+                      )}>
+                        {getImpactLabel(article.market_impact)}
+                      </span>
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wide">{getPublishedLabel(article.published_at)}</span>
+                    </div>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-gray-600" />
                       <span className="text-[10px] text-gray-500 uppercase tracking-wide">{article.source_name}</span>
@@ -297,6 +362,9 @@ const MarketNews: React.FC = () => {
                         {article.title}
                       </h3>
                     </a>
+                    <p className="mt-2 text-[11px] text-gray-300 line-clamp-2">
+                      {article.ai_reasoning}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -306,7 +374,7 @@ const MarketNews: React.FC = () => {
       )}
 
       {!newsLoading && news.length > 0 && (
-        <div className="border-t border-gold-500/15 pt-8 text-center">
+        <div className="border-t border-gold-500/15 pt-6 text-center">
           <p className="text-xs text-gray-600">
             Market data & signals generated by AI • Last updated: {new Date().toLocaleTimeString()}
           </p>
