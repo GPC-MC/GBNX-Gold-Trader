@@ -517,10 +517,9 @@ const Market: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Chart Section */}
-        <div className="lg:col-span-2 h-full">
-          <div className="rounded-2xl overflow-hidden h-full flex flex-col border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm">
+      {/* Chart Section - Full Width */}
+      <div className="w-full">
+        <div className="rounded-2xl overflow-hidden h-full flex flex-col border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm">
             <div className="p-6 border-b border-gold-500/10">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-white">Price Chart</h2>
@@ -588,7 +587,7 @@ const Market: React.FC = () => {
                         domain: [0, 1]
                       },
                       margin: { l: 60, r: 20, t: 40, b: 40 },
-                      height: 400,
+                      height: 600,
                       showlegend: true,
                       legend: {
                         x: 0,
@@ -726,55 +725,6 @@ const Market: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Right Sidebar */}
-        <div className="space-y-8">
-          {/* Order Book */}
-          <div className="rounded-2xl border border-gold-500/15 bg-ink-850/55 shadow-panel backdrop-blur-sm p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Order Book</h2>
-            <div className="space-y-3">
-              <div className="text-xs font-semibold tracking-[0.18em] grid grid-cols-2 gap-4 pb-3 border-b border-gold-500/10 text-gray-500">
-                <span>PRICE (USD)</span>
-                <span className="text-right">SIZE (OZ)</span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-rose-300">
-                  <span className="font-medium">2,348.50</span>
-                  <span className="text-right text-gray-400">1.2</span>
-                </div>
-                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-rose-300">
-                  <span className="font-medium">2,347.25</span>
-                  <span className="text-right text-gray-400">2.8</span>
-                </div>
-                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-rose-300">
-                  <span className="font-medium">2,346.00</span>
-                  <span className="text-right text-gray-400">1.5</span>
-                </div>
-              </div>
-
-              <div className="py-3 px-3 text-center rounded-lg bg-gold-500/10 border border-gold-500/15">
-                <span className="font-bold text-lg text-gold-300">${marketData.price.toFixed(2)}</span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-emerald-300">
-                  <span className="font-medium">2,344.75</span>
-                  <span className="text-right text-gray-400">3.1</span>
-                </div>
-                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-emerald-300">
-                  <span className="font-medium">2,343.50</span>
-                  <span className="text-right text-gray-400">2.4</span>
-                </div>
-                <div className="text-sm grid grid-cols-2 gap-4 py-1 px-2 rounded text-emerald-300">
-                  <span className="font-medium">2,342.25</span>
-                  <span className="text-right text-gray-400">1.8</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
