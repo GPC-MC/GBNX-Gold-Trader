@@ -16,8 +16,10 @@ services:
       # You can override env vars here or use the .env file in the image
       - PORT=8081
     volumes:
-      # Mount /data directory for all persistent data
-      - ./data:/data
+      # Mount only specific data directories (not entire /data to preserve .venv)
+      - ./data/logs:/data/logs
+      - ./data/cache:/data/cache
+      - ./data/uploads:/data/uploads
       # Optional: Mount .env file if you want to change it without rebuilding
       - ./.env:/data/.env:ro
     restart: unless-stopped
