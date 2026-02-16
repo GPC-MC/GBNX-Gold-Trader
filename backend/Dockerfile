@@ -7,10 +7,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_LINK_MODE=copy \
     PATH="/data/.venv/bin:${PATH}" \
-    PYTHONPATH=/data
+    PYTHONPATH=/data \
+    TMPDIR=/data/temp \
+    TEMP=/data/temp \
+    TMP=/data/temp
 
 # No system dependencies needed - using binary wheels for all Python packages
 # curl is already in base image for healthcheck
+
+# Create temp directory for downloads
+RUN mkdir -p /data/temp
 
 # Copy dependency files first for better layer caching
 COPY pyproject.toml uv.lock ./
