@@ -410,8 +410,6 @@ const Market: React.FC = () => {
   };
 
   const currentConfig = commodityConfigs[selectedCommodity];
-  const latest = priceData.length > 0 ? priceData[priceData.length - 1] : null;
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Commodity Selection */}
@@ -557,19 +555,10 @@ const Market: React.FC = () => {
                         decreasing: { line: { color: '#DC2626' } },
                         name: 'Price',
                         yaxis: 'y'
-                      },
-                      {
-                        x: priceData.map(d => d.Date_time),
-                        y: priceData.map(d => d.EMA_20),
-                        type: 'scatter' as const,
-                        mode: 'lines' as const,
-                        line: { color: '#D4AF37', width: 1.5 },
-                        name: 'EMA (20)',
-                        yaxis: 'y'
                       }
                     ]}
                     layout={{
-                      title: { text: `${currentConfig.name} Price & Technical Indicators`, font: { color: '#9CA3AF', size: 14 } },
+                      title: { text: `${currentConfig.name} Price Chart`, font: { color: '#9CA3AF', size: 14 } },
                       paper_bgcolor: '#0B1220',
                       plot_bgcolor: '#0B1220',
                       font: { color: '#9CA3AF' },
@@ -620,99 +609,6 @@ const Market: React.FC = () => {
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Indicator Pills */}
-              <div className="flex flex-wrap gap-3 mb-6">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold-500/15 bg-ink-800/55">
-                  <span className="text-xs font-semibold tracking-[0.18em] text-gray-500">EMA 20</span>
-                  <span className="text-sm font-semibold text-gray-100">
-                    {latest ? `$${latest.EMA_20.toFixed(2)}` : '—'}
-                  </span>
-                </div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold-500/15 bg-ink-800/55">
-                  <span className="text-xs font-semibold tracking-[0.18em] text-gray-500">STOCH %D</span>
-                  <span className="text-sm font-semibold text-gray-100">
-                    {latest ? latest.Stochastic_D.toFixed(1) : '—'}
-                  </span>
-                </div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold-500/15 bg-ink-800/55">
-                  <span className="text-xs font-semibold tracking-[0.18em] text-gray-500">CCI</span>
-                  <span className="text-sm font-semibold text-gray-100">
-                    {latest ? latest.CCI.toFixed(1) : '—'}
-                  </span>
-                </div>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold-500/15 bg-ink-800/55">
-                  <span className="text-xs font-semibold tracking-[0.18em] text-gray-500">ADX</span>
-                  <span className="text-sm font-semibold text-gray-100">
-                    {latest ? latest.ADX.toFixed(1) : '—'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Technical Summary */}
-              <div className="rounded-xl border border-gold-500/10 bg-ink-800/55 p-5 shadow-[0_4px_15px_rgba(0,0,0,0.25)]">
-                <h4 className="font-semibold text-white mb-4">Technical Analysis</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">EMA (20)</span>
-                    <span
-                      className={clsx(
-                        'px-3 py-1 rounded-full text-xs font-semibold',
-                        latest && latest.Close > latest.EMA_20
-                          ? 'bg-emerald-500/15 text-emerald-300'
-                          : 'bg-rose-500/15 text-rose-300'
-                      )}
-                    >
-                      {latest && latest.Close > latest.EMA_20 ? 'Bullish' : 'Bearish'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">Stochastic</span>
-                    <span
-                      className={clsx(
-                        'px-3 py-1 rounded-full text-xs font-semibold',
-                        latest && latest.Stochastic_D > 80
-                          ? 'bg-rose-500/15 text-rose-300'
-                          : latest && latest.Stochastic_D < 20
-                            ? 'bg-emerald-500/15 text-emerald-300'
-                            : 'bg-gold-500/15 text-gray-300'
-                      )}
-                    >
-                      {latest && latest.Stochastic_D > 80 ? 'Overbought' : latest && latest.Stochastic_D < 20 ? 'Oversold' : 'Neutral'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">CCI</span>
-                    <span
-                      className={clsx(
-                        'px-3 py-1 rounded-full text-xs font-semibold',
-                        latest && latest.CCI > 100
-                          ? 'bg-rose-500/15 text-rose-300'
-                          : latest && latest.CCI < -100
-                            ? 'bg-emerald-500/15 text-emerald-300'
-                            : 'bg-sky-500/15 text-sky-300'
-                      )}
-                    >
-                      {latest && latest.CCI > 100 ? 'Overbought' : latest && latest.CCI < -100 ? 'Oversold' : 'Normal'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">ADX</span>
-                    <span
-                      className={clsx(
-                        'px-3 py-1 rounded-full text-xs font-semibold',
-                        latest && latest.ADX > 50
-                          ? 'bg-emerald-500/15 text-emerald-300'
-                          : latest && latest.ADX > 25
-                            ? 'bg-amber-500/15 text-amber-300'
-                            : 'bg-rose-500/15 text-rose-300'
-                      )}
-                    >
-                      {latest && latest.ADX > 50 ? 'Strong' : latest && latest.ADX > 25 ? 'Moderate' : 'Weak'}
-                    </span>
-                  </div>
-                </div>
               </div>
 
               {priceData.length > 0 && (
