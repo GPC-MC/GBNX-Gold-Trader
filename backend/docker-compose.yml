@@ -32,6 +32,16 @@ services:
     networks:
       - gbnx-network
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: gbnx_cloudflared
+    command: tunnel --no-autoupdate --url http://backend:8081
+    depends_on:
+      - backend
+    networks:
+      - gbnx-network
+    restart: unless-stopped
+
 networks:
   gbnx-network:
     driver: bridge

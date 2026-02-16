@@ -1,20 +1,24 @@
-# Cài đặt Cloudflare Tunnel cho Backend
+# Cài đặt Cloudflare Tunnel cho Backend (Docker)
 
-## Bước 1: Cài đặt cloudflared trên server backend (34.41.9.244)
+## Bước 1: Deploy backend với Cloudflared
+
+Backend đã được cấu hình sẵn cloudflared trong `docker-compose.yml`. Chỉ cần deploy:
 
 ```bash
 # Trên server backend (SSH vào 34.41.9.244)
-wget -q https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-sudo dpkg -i cloudflared-linux-amd64.deb
+cd /path/to/backend
+docker-compose up -d
 ```
 
-## Bước 2: Tạo tunnel (chạy trên server backend)
+## Bước 2: Lấy URL tunnel
+
+Xem logs của cloudflared để lấy URL HTTPS:
 
 ```bash
-cloudflared tunnel --url http://localhost:8081
+docker-compose logs cloudflared
 ```
 
-Lệnh này sẽ cho bạn 1 URL HTTPS miễn phí dạng: `https://xyz-abc-123.trycloudflare.com`
+Bạn sẽ thấy dòng như: `https://xyz-abc-123.trycloudflare.com`
 
 ## Bước 3: Update file .env của frontend
 
@@ -32,12 +36,23 @@ VITE_BACKEND_API_BASE_URL=https://xyz-abc-123.trycloudflare.com
 
 Code của bạn sẽ tự động chuyển `https://` thành `wss://` cho WebSocket!
 
-## Chạy tunnel vĩnh viễn (optional)
+## Quản lý tunnel
 
 ```bash
-# Chạy tunnel như một service
-cloudflared service install
+# Xem trạng thái
+docker-compose ps
+
+# Restart tunnel (sẽ tạo URL mới)
+docker-compose restart cloudflared
+
+# Xem logs realtime
+docker-compose logs -f cloudflared
+
+# Stop toàn bộ
+docker-compose down
 ```
+
+Tunnel sẽ tự động khởi động lại khi server reboot (restart: unless-stopped)
 
 ---
 
