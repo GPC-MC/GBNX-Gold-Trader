@@ -21,10 +21,13 @@ RUN mkdir -p /data/temp
 # Copy dependency files first for better layer caching
 COPY pyproject.toml uv.lock ./
 
-# Install Python dependencies (no cache to avoid BuildKit requirement)
-RUN uv sync --frozen --no-dev --no-cache && \
-    ls -la /data/.venv/bin/ && \
-    /data/.venv/bin/python --version
+# Install Python dependencies
+# Use explicit venv creation and pip install for better reliability
+RUN uv venv /data/.venv && \
+    uv pip install --no-cache -e . && \
+    ls -la /data/.venv/bin/ | head -20 && \
+    /data/.venv/bin/python --version && \
+    /data/.venv/bin/python -c "import uvicorn; print(f'uvicorn {uvicorn.__version__}')"
 
 # Copy application code
 COPY src ./src
