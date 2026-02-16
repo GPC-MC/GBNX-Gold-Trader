@@ -1,0 +1,49 @@
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm
+
+WORKDIR /data
+
+# Environment variables for Python
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_LINK_MODE=copy \
+    PATH="/data/.venv/bin:${PATH}" \
+    PYTHONPATH=/data \
+    TMPDIR=/data/temp \
+    TEMP=/data/temp \
+    TMP=/data/temp
+
+# No system dependencies needed - using binary wheels for all Python packages
+# curl is already in base image for healthcheck
+
+# Create temp directory for downloads
+RUN mkdir -p /data/temp
+
+# Copy minimal requirements first
+COPY requirements-minimal.txt ./
+
+# Install minimal dependencies (much faster and lighter)
+RUN uv venv /data/.venv && \
+    uv pip install --no-cache -r requirements-minimal.txt && \
+    /data/.venv/bin/python --version && \
+    /data/.venv/bin/python -c "import uvicorn; print(f'uvicorn {uvicorn.__version__}')"
+
+# Copy application code
+COPY src ./src
+COPY main.py ./main.py
+
+# Copy .env file (will be in the image, can also mount via volume)
+COPY .env ./.env
+
+# Create all necessary directories under /data
+RUN mkdir -p /data/logs /data/cache /data/uploads /data/temp && \
+    chmod -R 777 /data/logs /data/cache /data/uploads /data/temp
+
+# Expose the application port
+EXPOSE 8081
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8081/ || exit 1
+
+# Run the application using python -m (more reliable than calling binary)
+CMD ["/data/.venv/bin/python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8081"]

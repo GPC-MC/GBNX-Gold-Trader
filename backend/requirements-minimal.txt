@@ -1,0 +1,31 @@
+# Minimal requirements for Gold Trader backend to run
+# Remove heavy ML packages for initial deployment
+
+fastapi>=0.116.0
+uvicorn>=0.35.0
+pydantic>=2.11.7
+pydantic-settings>=2.10.1
+psycopg2-binary>=2.9.11
+redis>=7.1.0
+httpx>=0.28.1
+python-multipart>=0.0.20
+python-jose>=3.5.0
+itsdangerous>=2.2.0
+pyyaml>=6.0.2
+pymongo>=4.14.0
+boto3>=1.39.4
+rich>=14.2.0
+beautifulsoup4>=4.14.3
+markdown>=3.10
+
+# LangChain core (without heavy dependencies)
+langchain>=1.0.3
+langchain-anthropic>=1.0.1
+langchain-openai>=0.3.27
+langgraph==1.0.2
+
+# Optional: Add back ML packages after server is stable
+# torch>=2.0.0
+# sentence-transformers>=5.1.0
+# docling>=2.64.0
+# flashrank>=0.2.10
