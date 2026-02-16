@@ -47,5 +47,5 @@ EXPOSE 8081
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -fsS http://127.0.0.1:8081/ || exit 1
 
-# Run the application directly from venv
-CMD ["/data/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8081"]
+# Run the application using python -m (more reliable than calling binary)
+CMD ["/data/.venv/bin/python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8081"]
