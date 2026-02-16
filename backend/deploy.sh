@@ -53,13 +53,19 @@ cleanup_existing() {
 build_image() {
     print_message "$BLUE" "Building Docker image..."
 
+    local build_args=""
+    if [ "$NO_CACHE" = "true" ]; then
+        print_message "$YELLOW" "Building with --no-cache (fresh build)..."
+        build_args="--no-cache"
+    fi
+
     # Try to use BuildKit if available (faster builds with cache)
     if docker buildx version &> /dev/null; then
         print_message "$YELLOW" "Using BuildKit for optimized build..."
-        DOCKER_BUILDKIT=1 docker build -t "$IMAGE_NAME:latest" .
+        DOCKER_BUILDKIT=1 docker build $build_args -t "$IMAGE_NAME:latest" .
     else
         print_message "$YELLOW" "BuildKit not available, using standard build..."
-        docker build -t "$IMAGE_NAME:latest" .
+        docker build $build_args -t "$IMAGE_NAME:latest" .
     fi
 
     if [ $? -eq 0 ]; then
@@ -115,13 +121,19 @@ deploy_with_compose() {
     # Stop existing services
     docker compose down || true
 
+    local build_args=""
+    if [ "$NO_CACHE" = "true" ]; then
+        print_message "$YELLOW" "Building with --no-cache (fresh build)..."
+        build_args="--no-cache"
+    fi
+
     # Build and start services (BuildKit will be used if DOCKER_BUILDKIT env is set)
     if docker buildx version &> /dev/null; then
         print_message "$YELLOW" "Using BuildKit for optimized build..."
-        DOCKER_BUILDKIT=1 docker compose up -d --build
+        DOCKER_BUILDKIT=1 docker compose build $build_args && docker compose up -d
     else
         print_message "$YELLOW" "BuildKit not available, using standard build..."
-        docker compose up -d --build
+        docker compose build $build_args && docker compose up -d
     fi
 
     if [ $? -eq 0 ]; then
@@ -149,6 +161,14 @@ main() {
     echo "1) Docker (manual)"
     echo "2) Docker Compose (recommended)"
     read -p "Enter choice [1-2]: " choice
+
+    # Ask if user wants to clear cache
+    echo ""
+    read -p "Clear Docker cache and rebuild from scratch? (y/n): " clear_cache
+    if [[ "$clear_cache" =~ ^[Yy]$ ]]; then
+        export NO_CACHE="true"
+        print_message "$YELLOW" "Will build with --no-cache"
+    fi
 
     case $choice in
         1)

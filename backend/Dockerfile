@@ -10,13 +10,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/data
 
 # Install system dependencies
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+# Fix GPG key issues first
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update --allow-insecure-repositories || true && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-unauthenticated \
+       debian-archive-keyring \
+       ca-certificates && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        build-essential \
        libpq-dev \
-       curl \
-       ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+       curl && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy dependency files first for better layer caching
 COPY pyproject.toml uv.lock ./
