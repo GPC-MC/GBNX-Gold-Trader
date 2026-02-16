@@ -5,7 +5,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      shm_size: '2gb'
     container_name: gbnx_gold_trader_backend
+    shm_size: '2gb'
+    tmpfs:
+      - /tmp:size=10G,mode=1777
     ports:
       - "8081:8081"
     environment:

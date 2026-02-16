@@ -128,12 +128,13 @@ deploy_with_compose() {
     fi
 
     # Build and start services (BuildKit will be used if DOCKER_BUILDKIT env is set)
+    # Set TMPDIR to use large /data volume for build process
     if docker buildx version &> /dev/null; then
         print_message "$YELLOW" "Using BuildKit for optimized build..."
-        DOCKER_BUILDKIT=1 docker compose build $build_args && docker compose up -d
+        TMPDIR=/data/tmp DOCKER_BUILDKIT=1 docker compose build $build_args && docker compose up -d
     else
         print_message "$YELLOW" "BuildKit not available, using standard build..."
-        docker compose build $build_args && docker compose up -d
+        TMPDIR=/data/tmp docker compose build $build_args && docker compose up -d
     fi
 
     if [ $? -eq 0 ]; then
