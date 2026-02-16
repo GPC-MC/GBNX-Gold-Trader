@@ -28,7 +28,9 @@ RUN apt-get clean && \
 COPY pyproject.toml uv.lock ./
 
 # Install Python dependencies (no cache to avoid BuildKit requirement)
-RUN uv sync --frozen --no-dev --no-cache
+RUN uv sync --frozen --no-dev --no-cache && \
+    ls -la /data/.venv/bin/ && \
+    /data/.venv/bin/python --version
 
 # Copy application code
 COPY src ./src
@@ -48,5 +50,5 @@ EXPOSE 8081
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -fsS http://127.0.0.1:8081/ || exit 1
 
-# Run the application
-CMD ["uv", "run", "python", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8081"]
+# Run the application directly from venv
+CMD ["/data/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8081"]
