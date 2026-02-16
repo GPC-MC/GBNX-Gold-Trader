@@ -9,20 +9,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/data/.venv/bin:${PATH}" \
     PYTHONPATH=/data
 
-# Install system dependencies
-# Fix GPG key issues first
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get update --allow-insecure-repositories || true && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --allow-unauthenticated \
-       debian-archive-keyring \
-       ca-certificates && \
-    apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       build-essential \
-       libpq-dev \
-       curl && \
-    rm -rf /var/lib/apt/lists/*
+# No system dependencies needed - using binary wheels for all Python packages
+# curl is already in base image for healthcheck
 
 # Copy dependency files first for better layer caching
 COPY pyproject.toml uv.lock ./
