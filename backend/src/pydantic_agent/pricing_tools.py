@@ -347,3 +347,26 @@ def get_pricing_tools():
         compare_trading_pairs_tool,
         get_full_market_snapshot,
     ]
+
+
+
+# if __name__ == "__main__":
+#     print(asyncio.run(get_current_price(None, "xau_usd")))
+#     import pdb; pdb.set_trace()
+#     print(asyncio.run(get_market_summary_tool(None, "xau_usd")))
+#     import pdb; pdb.set_trace()
+
+#     print(asyncio.run(get_price_history(None, "xau_usd")))
+#     import pdb; pdb.set_trace()
+
+#     print(asyncio.run(analyze_price_trend(None, "xau_usd")))
+#     import pdb; pdb.set_trace()
+
+#     print(asyncio.run(get_all_metals_overview(None, "xau_usd")))
+#     import pdb; pdb.set_trace()
+
+#     print(asyncio.run(compare_trading_pairs_tool(None, "xau_usd,xag_usd,xpt_usd")))
+#     import pdb; pdb.set_trace()
+
+#     print(asyncio.run(get_full_market_snapshot(None, "xau_usd,xag_usd,xpt_usd")))
+#     import pdb; pdb.set_trace()
