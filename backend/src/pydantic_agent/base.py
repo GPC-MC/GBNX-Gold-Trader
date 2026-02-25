@@ -17,7 +17,6 @@ from dotenv import load_dotenv
 import os
 import logging
 import asyncio
-from src.mcp_client import mcp_client
 import json
 import hashlib
 

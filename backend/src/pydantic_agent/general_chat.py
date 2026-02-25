@@ -149,7 +149,7 @@ if __name__ == "__main__":
     async def main():
         user_id = "test_user_1"
         thread_id = "test_thread_1"
-        agent = GeneralChatAgent(model_name="qwen-max")
+        agent = GeneralChatAgent(model_name="gpt-4o-mini")
         console.print(Panel(
             "[bold cyan]GBNX Gold Trader AI - Interactive Chat[/]\n\n"
             "[white]Commands:[/]\n"

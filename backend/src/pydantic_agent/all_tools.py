@@ -1,6 +1,5 @@
 from pydantic_ai import RunContext
 from src.search_service.unified_search import UnifiedSearchService
-from src.schemas.streaming_schema import ImageStyle
 from dataclasses import dataclass
 from typing import List, Optional, Generator
 import json
@@ -9,27 +8,14 @@ from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
 from src.pydantic_agent.pricing_tools import get_pricing_tools
-from src.tools.image_analysis_tools import ImageAnalysisTools
-from src.tools.s3_tools import UnifiedS3Tools
-from src.tools.homepage_chat_tools import HomepageChatTools
-from src.tools.design_tools import UnifiedDesignTools
-from src.tools.document_handler import DocumentHandler
-from src.tools.homepage_chat_history_tools import HomepageChatDBHandler
-from src.tools.chunking_tools import ChunkingDBHandler
 import re
 from urllib.parse import unquote
 from src.app_config import app_config
-from langchain_huggingface import HuggingFaceEmbeddings
 from src.debug_print import debug, info, success, warning, error, critical
 
 
 load_dotenv()
 
-
-embedding_model = HuggingFaceEmbeddings(
-    model_name=app_config.EMBEDDING_MODEL,
-    model_kwargs={"trust_remote_code": True}
-)
 
 llm = ChatOpenAI(
     model="gpt-4o-mini",
@@ -43,7 +29,6 @@ qwen_llm = ChatOpenAI(
     api_key=app_config.LITE_LLM_API_KEY,
 )
 
-s3_tools = UnifiedS3Tools()
 
 unified_search = UnifiedSearchService()
 
