@@ -1,9 +1,14 @@
+import asyncio
 import httpx
 from typing import List, Optional, Literal
 from .models import OHLCData, TradingPair
 
 
 BASE_URL = "https://gpcintegral.southeastasia.cloudapp.azure.com"
+
+_REQUEST_TIMEOUT = 10.0  # seconds
+_MAX_RETRIES = 3
+_RETRY_DELAY = 2.0  # seconds between retries
 
 
 async def get_ohlc_data(
@@ -25,21 +30,22 @@ async def get_ohlc_data(
         "sort": sort,
     }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, params=params)
-        response.raise_for_status()
-        response_data = response.json()
-
-        # Handle both direct array and wrapped response formats
-        if isinstance(response_data, dict):
-            # Check if data is wrapped in a "data" key
-            data = response_data.get("data", response_data.get("results", []))
-        elif isinstance(response_data, list):
-            data = response_data
-        else:
-            raise ValueError(f"Unexpected response format: {type(response_data)}")
-
+    last_error: Exception | None = None
+    for attempt in range(1, _MAX_RETRIES + 1):
         try:
+            async with httpx.AsyncClient(timeout=_REQUEST_TIMEOUT) as client:
+                response = await client.get(url, params=params)
+                response.raise_for_status()
+                response_data = response.json()
+
+            # Handle both direct array and wrapped response formats
+            if isinstance(response_data, dict):
+                data = response_data.get("data", response_data.get("results", []))
+            elif isinstance(response_data, list):
+                data = response_data
+            else:
+                raise ValueError(f"Unexpected response format: {type(response_data)}")
+
             result = []
             for item in data:
                 try:
@@ -68,11 +74,16 @@ async def get_ohlc_data(
 
             print(f"Successfully parsed {len(result)} OHLC records")
             return result
+
         except Exception as e:
-            print(f"Error in get_ohlc_data: {e}")
-            print(f"Response data type: {type(response_data)}")
-            print(f"Response data sample: {data[:2] if isinstance(data, list) and len(data) > 0 else response_data}")
-            raise
+            last_error = e
+            print(f"Attempt {attempt}/{_MAX_RETRIES} failed for {trading_pair.value}: {e}")
+            if attempt < _MAX_RETRIES:
+                print(f"Retrying in {_RETRY_DELAY}s...")
+                await asyncio.sleep(_RETRY_DELAY)
+
+    print(f"All {_MAX_RETRIES} attempts failed for {trading_pair.value}")
+    raise last_error
 
 
 def get_ohlc_data_sync(
