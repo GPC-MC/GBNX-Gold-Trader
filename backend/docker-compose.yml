@@ -7,9 +7,7 @@ services:
       dockerfile: Dockerfile
       shm_size: '2gb'
     container_name: gbnx_gold_trader_backend
-    shm_size: '2gb'
-    tmpfs:
-      - /tmp:size=10G,mode=1777
+    shm_size: '512m'
     ports:
       - "8081:8081"
     environment:
@@ -20,6 +18,8 @@ services:
       - ./data/logs:/data/logs
       - ./data/cache:/data/cache
       - ./data/uploads:/data/uploads
+      # Redirect container /tmp to mounted data disk so it doesn't fill root filesystem
+      - /data/docker/tmp:/tmp
       # Optional: Mount .env file if you want to change it without rebuilding
       - ./.env:/data/.env:ro
     restart: unless-stopped

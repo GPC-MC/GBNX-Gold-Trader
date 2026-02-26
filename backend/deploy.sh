@@ -53,6 +53,10 @@ cleanup_existing() {
 build_image() {
     print_message "$BLUE" "Building Docker image..."
 
+    # Ensure /data/docker/tmp exists so BuildKit uses the mounted data disk, not root disk
+    mkdir -p /data/docker/tmp
+    chmod 1777 /data/docker/tmp
+
     local build_args=""
     if [ "$NO_CACHE" = "true" ]; then
         print_message "$YELLOW" "Building with --no-cache (fresh build)..."
@@ -121,6 +125,10 @@ deploy_with_compose() {
     # Stop existing services
     docker compose down || true
 
+    # Ensure /data/docker/tmp exists so BuildKit uses the mounted data disk, not root disk
+    mkdir -p /data/docker/tmp
+    chmod 1777 /data/docker/tmp
+
     local build_args=""
     if [ "$NO_CACHE" = "true" ]; then
         print_message "$YELLOW" "Building with --no-cache (fresh build)..."
@@ -131,10 +139,10 @@ deploy_with_compose() {
     # Set TMPDIR to use large /data volume for build process
     if docker buildx version &> /dev/null; then
         print_message "$YELLOW" "Using BuildKit for optimized build..."
-        TMPDIR=/data/tmp DOCKER_BUILDKIT=1 docker compose build $build_args && docker compose up -d
+        TMPDIR=/data/docker/tmp DOCKER_BUILDKIT=1 docker compose build $build_args && docker compose up -d
     else
         print_message "$YELLOW" "BuildKit not available, using standard build..."
-        TMPDIR=/data/tmp docker compose build $build_args && docker compose up -d
+        TMPDIR=/data/docker/tmp docker compose build $build_args && docker compose up -d
     fi
 
     if [ $? -eq 0 ]; then
