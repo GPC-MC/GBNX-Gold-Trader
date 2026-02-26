@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # GBNX Gold Trader - Docker Data Volume Setup
-# This script moves Docker data directory to /data to avoid filling up root partition
+# This script moves Docker and containerd data directories to /data
+# to avoid filling up the root partition on small boot disks.
 
 set -e
 
@@ -18,7 +19,7 @@ print_message() {
 }
 
 print_message "$BLUE" "========================================="
-print_message "$BLUE" "Docker Data Directory Setup"
+print_message "$BLUE" "Docker + Containerd Data Directory Setup"
 print_message "$BLUE" "========================================="
 echo ""
 
@@ -41,17 +42,19 @@ docker volume prune -f || true
 print_message "$GREEN" "✓ Cleanup completed"
 echo ""
 
-# Stop Docker
-print_message "$BLUE" "Step 2: Stopping Docker service..."
+# Stop Docker and containerd
+print_message "$BLUE" "Step 2: Stopping Docker/containerd services..."
 systemctl stop docker
 systemctl stop docker.socket
-print_message "$GREEN" "✓ Docker stopped"
+systemctl stop containerd || true
+print_message "$GREEN" "✓ Docker/containerd stopped"
 echo ""
 
-# Create new directory
-print_message "$BLUE" "Step 3: Creating /data/docker directory..."
+# Create new directories
+print_message "$BLUE" "Step 3: Creating /data/docker and /data/containerd directories..."
 mkdir -p /data/docker
-print_message "$GREEN" "✓ Directory created"
+mkdir -p /data/containerd
+print_message "$GREEN" "✓ Directories created"
 echo ""
 
 # Move existing data
@@ -66,8 +69,24 @@ else
 fi
 echo ""
 
+# Move containerd data as well (newer Docker can use containerd snapshot paths
+# under /var/lib/containerd during build export/unpack).
+if [ -d "/var/lib/containerd" ] && [ ! -L "/var/lib/containerd" ]; then
+    print_message "$BLUE" "Step 5: Moving existing containerd data..."
+    print_message "$YELLOW" "This may take a few minutes..."
+    rsync -aP /var/lib/containerd/ /data/containerd/ || true
+    mv /var/lib/containerd /var/lib/containerd.backup.$(date +%Y%m%d-%H%M%S)
+    ln -s /data/containerd /var/lib/containerd
+    print_message "$GREEN" "✓ containerd data moved and symlinked"
+elif [ -L "/var/lib/containerd" ]; then
+    print_message "$YELLOW" "containerd already symlinked: $(readlink -f /var/lib/containerd)"
+else
+    print_message "$YELLOW" "No existing /var/lib/containerd directory found"
+fi
+echo ""
+
 # Configure Docker
-print_message "$BLUE" "Step 5: Configuring Docker daemon..."
+print_message "$BLUE" "Step 6: Configuring Docker daemon..."
 cat > /etc/docker/daemon.json <<EOF
 {
   "data-root": "/data/docker",
@@ -81,14 +100,15 @@ EOF
 print_message "$GREEN" "✓ Configuration updated"
 echo ""
 
-# Start Docker
-print_message "$BLUE" "Step 6: Starting Docker service..."
+# Start Docker/containerd
+print_message "$BLUE" "Step 7: Starting containerd and Docker services..."
+systemctl start containerd || true
 systemctl start docker
 print_message "$GREEN" "✓ Docker started"
 echo ""
 
 # Verify
-print_message "$BLUE" "Step 7: Verifying configuration..."
+print_message "$BLUE" "Step 8: Verifying configuration..."
 DOCKER_ROOT=$(docker info 2>/dev/null | grep "Docker Root Dir" | awk '{print $4}')
 if [ "$DOCKER_ROOT" = "/data/docker" ]; then
     print_message "$GREEN" "✓ Verification successful!"
@@ -97,10 +117,13 @@ else
     print_message "$RED" "⚠ Warning: Docker root is still: $DOCKER_ROOT"
     print_message "$YELLOW" "You may need to restart Docker manually"
 fi
+if [ -L "/var/lib/containerd" ]; then
+    print_message "$GREEN" "containerd dir link: /var/lib/containerd -> $(readlink -f /var/lib/containerd)"
+fi
 echo ""
 
 # Clean up old kernels and system cache
-print_message "$BLUE" "Step 8: Cleaning up system..."
+print_message "$BLUE" "Step 9: Cleaning up system..."
 apt-get autoremove -y
 apt-get autoclean
 journalctl --vacuum-time=3d
@@ -120,7 +143,8 @@ echo ""
 print_message "$BLUE" "Next steps:"
 echo "1. cd ~/GBNX-Gold-Trader/backend"
 echo "2. git pull"
-echo "3. ./deploy.sh"
+echo "3. sudo ./setup-docker-data.sh"
+echo "4. ./deploy.sh"
 echo ""
 print_message "$YELLOW" "Note: Old Docker data backup is at /var/lib/docker.backup"
 print_message "$YELLOW" "You can delete it after verifying everything works"
