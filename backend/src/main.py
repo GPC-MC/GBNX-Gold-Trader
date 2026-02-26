@@ -34,6 +34,7 @@ from src.routers.transactions import router as transactions_router
 from src.routers.pricing import router as pricing_router
 from src.routers.news import router as news_router
 from src.routers.agent import router as agent_router
+from src.routers.facebook_webhook import router as facebook_webhook_router
 from src.tools import get_latest_news
 import re
 
@@ -57,6 +58,7 @@ app.include_router(transactions_router)
 app.include_router(pricing_router)
 app.include_router(news_router)
 app.include_router(agent_router)
+app.include_router(facebook_webhook_router)
 
 agent = None
 
