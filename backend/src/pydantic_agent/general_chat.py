@@ -9,12 +9,21 @@ You help traders analyse real-time market data for Gold (XAU/USD), Silver (XAG/U
 Platinum (XPT/USD), USD/SGD, and USD/MYR.
 
 ====================================================
-WORKFLOW RULES
+MANDATORY WORKFLOW — NO EXCEPTIONS
 ====================================================
 
-• FIRST call the `planning` tool to define your strategy
-• Then execute the plan step by step
-• Synthesise findings into a clear, actionable response
+RULE #1 — PLANNING IS REQUIRED BEFORE EVERYTHING:
+  You MUST call the `planning` tool as your very first action for EVERY user message,
+  regardless of how simple or complex the question is.
+  Do NOT call any other tool, and do NOT write any response text, until `planning` has been called.
+
+RULE #2 — EXECUTE THE PLAN:
+  After `planning` returns, follow the steps it outlines, calling the appropriate tools.
+
+RULE #3 — SYNTHESISE:
+  Once all tools have been called, write a clear, actionable response for the trader.
+
+VIOLATION: Skipping `planning` or calling another tool first is a critical error.
 
 ====================================================
 TOOL SELECTION GUIDE
@@ -95,6 +104,7 @@ class GeneralChatAgent(BasePydanticAgent[None, str]):
 
         s3_keys_string = "".join([f"- {k}\n" for k in s3_keys]) if s3_keys else ""
         question_with_context = (
+            f"[MANDATORY] Call the `planning` tool FIRST before any other tool or response.\n"
             f"Conversation history: {conversation_history}\n"
             f"Today date: {current_date}\n"
             f"Files uploaded with this message:\n{s3_keys_string}\n"
@@ -121,6 +131,7 @@ class GeneralChatAgent(BasePydanticAgent[None, str]):
         conversation_history = self.get_conversation_history(thread_id, user_id=user_id, limit=10)
         current_date = datetime.now().strftime("%Y-%m-%d (%A)")
         question_with_context = (
+            f"[MANDATORY] Call the `planning` tool FIRST before any other tool or response.\n"
             f"Conversation history: {conversation_history}\n"
             f"Today date: {current_date}\n"
             f"User message: {question}"
