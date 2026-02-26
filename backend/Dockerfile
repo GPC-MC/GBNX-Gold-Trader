@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM ghcr.io/astral-sh/uv:python3.11-bookworm
 
 WORKDIR /data
@@ -13,14 +14,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY pyproject.toml uv.lock ./
 
 # Install Python dependencies.
-# TMPDIR is set to /data/tmp (overlay-backed by /data/docker) so that large
-# package extractions (e.g. torch ~2 GB) do NOT go to the BuildKit tmpfs at
-# /tmp, which is backed by RAM/root-disk and too small.
-# The temp dir is cleaned up at the end so it doesn't bloat the image layer.
-RUN mkdir -p /data/tmp && \
-    TMPDIR=/data/tmp uv venv /data/.venv && \
-    TMPDIR=/data/tmp uv pip install --no-cache -e . && \
-    rm -rf /data/tmp && \
+# Use BuildKit cache mounts for uv cache and temp extraction dir so large
+# wheels (e.g. torch) don't exhaust layer/tmp space during build.
+RUN --mount=type=cache,target=/root/.cache/uv,sharing=locked \
+    --mount=type=cache,target=/var/tmp/uv-tmp,sharing=locked \
+    TMPDIR=/var/tmp/uv-tmp uv venv /data/.venv && \
+    TMPDIR=/var/tmp/uv-tmp uv pip install --no-cache -e . && \
     /data/.venv/bin/python --version && \
     /data/.venv/bin/python -c "import uvicorn; print(f'uvicorn {uvicorn.__version__}')"
 

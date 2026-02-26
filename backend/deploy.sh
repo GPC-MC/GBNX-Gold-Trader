@@ -87,8 +87,8 @@ run_container() {
     docker run -d \
         --name "$CONTAINER_NAME" \
         -p "$PORT:8081" \
-        -v "$(pwd)/logs:/app/logs" \
-        -v "$(pwd)/.env:/app/.env:ro" \
+        -v "$(pwd)/logs:/data/logs" \
+        -v "$(pwd)/.env:/data/.env:ro" \
         --restart unless-stopped \
         "$IMAGE_NAME:latest"
 
