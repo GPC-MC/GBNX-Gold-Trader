@@ -53,9 +53,9 @@ cleanup_existing() {
 build_image() {
     print_message "$BLUE" "Building Docker image..."
 
-    # Ensure /data/docker/tmp exists so BuildKit uses the mounted data disk, not root disk
-    mkdir -p /data/docker/tmp
-    chmod 1777 /data/docker/tmp
+    # Pre-create container /tmp dir on the data disk (requires sudo, owned by Docker daemon root)
+    sudo mkdir -p /data/docker/tmp && sudo chmod 1777 /data/docker/tmp || \
+        print_message "$YELLOW" "Warning: could not create /data/docker/tmp (non-fatal)"
 
     local build_args=""
     if [ "$NO_CACHE" = "true" ]; then
@@ -125,9 +125,9 @@ deploy_with_compose() {
     # Stop existing services
     docker compose down || true
 
-    # Ensure /data/docker/tmp exists so BuildKit uses the mounted data disk, not root disk
-    mkdir -p /data/docker/tmp
-    chmod 1777 /data/docker/tmp
+    # Pre-create container /tmp dir on the data disk (requires sudo, owned by Docker daemon root)
+    sudo mkdir -p /data/docker/tmp && sudo chmod 1777 /data/docker/tmp || \
+        print_message "$YELLOW" "Warning: could not create /data/docker/tmp (non-fatal)"
 
     local build_args=""
     if [ "$NO_CACHE" = "true" ]; then
@@ -135,14 +135,14 @@ deploy_with_compose() {
         build_args="--no-cache"
     fi
 
-    # Build and start services (BuildKit will be used if DOCKER_BUILDKIT env is set)
-    # Set TMPDIR to use large /data volume for build process
+    # Build and start services
+    # Note: Docker build cache already lives in /data/docker (Docker Root Dir) — no TMPDIR needed
     if docker buildx version &> /dev/null; then
         print_message "$YELLOW" "Using BuildKit for optimized build..."
-        TMPDIR=/data/docker/tmp DOCKER_BUILDKIT=1 docker compose build $build_args && docker compose up -d
+        DOCKER_BUILDKIT=1 docker compose build $build_args && docker compose up -d
     else
         print_message "$YELLOW" "BuildKit not available, using standard build..."
-        TMPDIR=/data/docker/tmp docker compose build $build_args && docker compose up -d
+        docker compose build $build_args && docker compose up -d
     fi
 
     if [ $? -eq 0 ]; then
