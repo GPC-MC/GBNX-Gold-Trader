@@ -48,3 +48,6 @@ def stream_chat(question: str, user_id: str = "test_user", thread_id: str = "tes
 
 if __name__ == "__main__":
     stream_chat("What is the current price of gold?")
+
+
+    stream_chat("What is the current price of gold? and what is the technical analysis of the gold price?")
