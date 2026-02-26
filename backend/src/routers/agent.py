@@ -16,7 +16,7 @@ def get_agent() -> GeneralChatAgent:
     if _agent is None:
         _agent = GeneralChatAgent(
             system_prompt=GOLD_TRADER_SYSTEM_PROMPT,
-            model_name="qwen-max",
+            model_name="gpt-4o-mini",
         )
     return _agent
 

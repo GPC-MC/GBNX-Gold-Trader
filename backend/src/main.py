@@ -33,6 +33,7 @@ import numpy as np
 from src.routers.transactions import router as transactions_router
 from src.routers.pricing import router as pricing_router
 from src.routers.news import router as news_router
+from src.routers.agent import router as agent_router
 from src.tools import get_latest_news
 import re
 
@@ -55,6 +56,7 @@ app.add_middleware(
 app.include_router(transactions_router)
 app.include_router(pricing_router)
 app.include_router(news_router)
+app.include_router(agent_router)
 
 agent = None
 
